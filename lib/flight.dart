@@ -158,6 +158,33 @@ class _FlightPageState extends State<FlightPage> {
     }
   }
 
+  void _calculateTotalTime() {
+    final start = _departureTime.text;
+    final end = _arrivalTime.text;
+
+    int startHour = int.parse(start.substring(0, 2));
+    int startMinute = int.parse(start.substring(2));
+    int endHour = int.parse(end.substring(0, 2));
+    int endMinute = int.parse(end.substring(2));
+
+    int hourDiff = endHour - startHour;
+    int minuteDiff = endMinute - startMinute;
+
+    if (hourDiff < 0) {
+      hourDiff += 24;
+    }
+
+    if (minuteDiff < 0) {
+      minuteDiff += 60;
+      hourDiff--;
+    }
+
+    String hourString = hourDiff.toString().padLeft(2, '0');
+    String minuteString = minuteDiff.toString().padLeft(2, '0');
+
+    _timeTT.text = '$hourString:$minuteString';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -256,6 +283,9 @@ class _FlightPageState extends State<FlightPage> {
                         ],
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
+                        onEditingComplete: () {
+                          _calculateTotalTime();
+                        },
                       ),
                     )
                   ],
@@ -287,6 +317,9 @@ class _FlightPageState extends State<FlightPage> {
                         ],
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
+                        onEditingComplete: () {
+                          _calculateTotalTime();
+                        },
                       ),
                     )
                   ],
