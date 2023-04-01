@@ -1,5 +1,6 @@
 import 'flight.dart';
 import 'flightrecords.dart';
+import 'settings.dart';
 import 'package:flutter/material.dart';
 
 void main() async {
@@ -25,7 +26,7 @@ class _MyAppState extends State<MyApp> {
     _children = [
       const FlightRecordsPage(),
       const FlightPage(flightRecord: {'uuid': ''}),
-      Container(color: Colors.black),
+      const SettingsPage(),
     ];
     _currentIndex = 0;
   }

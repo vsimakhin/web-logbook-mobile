@@ -162,27 +162,29 @@ class _FlightPageState extends State<FlightPage> {
     final start = _departureTime.text;
     final end = _arrivalTime.text;
 
-    int startHour = int.parse(start.substring(0, 2));
-    int startMinute = int.parse(start.substring(2));
-    int endHour = int.parse(end.substring(0, 2));
-    int endMinute = int.parse(end.substring(2));
+    if (start.length == 4 && end.length == 4) {
+      int startHour = int.parse(start.substring(0, 2));
+      int startMinute = int.parse(start.substring(2));
+      int endHour = int.parse(end.substring(0, 2));
+      int endMinute = int.parse(end.substring(2));
 
-    int hourDiff = endHour - startHour;
-    int minuteDiff = endMinute - startMinute;
+      int hourDiff = endHour - startHour;
+      int minuteDiff = endMinute - startMinute;
 
-    if (hourDiff < 0) {
-      hourDiff += 24;
+      if (hourDiff < 0) {
+        hourDiff += 24;
+      }
+
+      if (minuteDiff < 0) {
+        minuteDiff += 60;
+        hourDiff--;
+      }
+
+      String hourString = hourDiff.toString().padLeft(2, '0');
+      String minuteString = minuteDiff.toString().padLeft(2, '0');
+
+      _timeTT.text = '$hourString:$minuteString';
     }
-
-    if (minuteDiff < 0) {
-      minuteDiff += 60;
-      hourDiff--;
-    }
-
-    String hourString = hourDiff.toString().padLeft(2, '0');
-    String minuteString = minuteDiff.toString().padLeft(2, '0');
-
-    _timeTT.text = '$hourString:$minuteString';
   }
 
   @override
@@ -198,7 +200,7 @@ class _FlightPageState extends State<FlightPage> {
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(10.0),
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -283,7 +285,7 @@ class _FlightPageState extends State<FlightPage> {
                         ],
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
-                        onEditingComplete: () {
+                        onChanged: (value) {
                           _calculateTotalTime();
                         },
                       ),
@@ -317,7 +319,7 @@ class _FlightPageState extends State<FlightPage> {
                         ],
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
-                        onEditingComplete: () {
+                        onChanged: (value) {
                           _calculateTotalTime();
                         },
                       ),
@@ -498,49 +500,48 @@ class _FlightPageState extends State<FlightPage> {
                     ),
                   ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  child: Row(
-                    children: [
-                      ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            _saveFlight();
-
-                            late String infoMsg;
-                            if (isNewFlight) {
-                              infoMsg = 'Flight record has been added';
-                            } else {
-                              infoMsg = 'Flight record has been updated';
-                              Navigator.pop(context, true);
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(infoMsg),
-                                duration: const Duration(seconds: 3),
-                              ),
-                            );
-                          }
-                        },
-                        child: const Text('Save'),
-                      ),
-                      const Spacer(),
-                      Visibility(
-                        visible: !isNewFlight,
-                        child: _DeleteFlightRecordButton(
-                          uuid: uuid,
-                          flightRecordName:
-                              '${_departurePlace.text} - ${_arrivalPlace.text}',
-                        ),
-                      )
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
         ),
       ),
+      persistentFooterButtons: [
+        Row(
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  _saveFlight();
+
+                  late String infoMsg;
+                  if (isNewFlight) {
+                    infoMsg = 'Flight record has been added';
+                  } else {
+                    infoMsg = 'Flight record has been updated';
+                    Navigator.pop(context, true);
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(infoMsg),
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Save'),
+            ),
+            const Spacer(),
+            Visibility(
+              visible: !isNewFlight,
+              child: _DeleteFlightRecordButton(
+                uuid: uuid,
+                flightRecordName:
+                    '${_departurePlace.text} - ${_arrivalPlace.text}',
+              ),
+            )
+          ],
+        ),
+      ],
     );
   }
 }
