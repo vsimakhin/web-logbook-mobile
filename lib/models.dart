@@ -1,3 +1,7 @@
+int getEpochTime() {
+  return DateTime.now().millisecondsSinceEpoch ~/ 1000;
+}
+
 class FlightRecord {
   FlightRecord({
     this.uuid = '',
@@ -24,6 +28,7 @@ class FlightRecord {
     this.simTime = '',
     this.picName = '',
     this.remarks = '',
+    this.updateTime = 0,
     this.isNew = false,
   });
 
@@ -51,6 +56,7 @@ class FlightRecord {
   String simTime;
   String picName;
   String remarks;
+  int updateTime;
 
   bool isNew;
 
@@ -80,6 +86,7 @@ class FlightRecord {
       simTime: data['sim_time'] as String,
       picName: data['pic_name'] as String,
       remarks: data['remarks'] as String,
+      updateTime: int.tryParse(data['remarks'] as String) ?? getEpochTime(),
     );
   }
 
@@ -109,6 +116,7 @@ class FlightRecord {
       simTime: data['sim_time'] as String,
       picName: data['pic_name'] as String,
       remarks: data['remarks'] as String,
+      updateTime: data['update_time'] as int,
     );
   }
 }

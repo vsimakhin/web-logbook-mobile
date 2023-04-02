@@ -43,7 +43,8 @@ class DBProvider {
       sim_type TEXT,
       sim_time TEXT,
       pic_name TEXT,
-      remarks TEXT
+      remarks TEXT,
+      update_time INTEGER
     );
 
     CREATE UNIQUE INDEX IF NOT EXISTS logbook_uuid ON logbook(uuid);
@@ -59,7 +60,7 @@ class DBProvider {
       iif(day_landings='',0,day_landings) as day_landings,
       iif(night_landings='',0,night_landings) as night_landings,
       night_time, ifr_time, pic_time, co_pilot_time, dual_time, instructor_time,
-      sim_type, sim_time, pic_name, remarks
+      sim_type, sim_time, pic_name, remarks, update_time
     FROM logbook;
   ''';
 
@@ -93,9 +94,9 @@ class DBProvider {
         arrival_time, aircraft_model, reg_name, se_time, me_time,
         mcc_time, total_time, day_landings, night_landings, night_time,
         ifr_time, pic_time, co_pilot_time, dual_time, instructor_time,
-        sim_type, sim_time, pic_name, remarks)
-        VALUES
-        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        sim_type, sim_time, pic_name, remarks, update_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', [
         fr.uuid,
         fr.date,
@@ -121,6 +122,7 @@ class DBProvider {
         fr.simTime,
         fr.picName,
         fr.remarks,
+        getEpochTime(),
       ]);
     } else {
       return await db!.rawUpdate('''UPDATE logbook
@@ -130,7 +132,7 @@ class DBProvider {
         total_time = ?, day_landings = ?, night_landings = ?,
         night_time = ?, ifr_time = ?, pic_time = ?, co_pilot_time = ?,
         dual_time = ?, instructor_time = ?, sim_type = ?,
-        sim_time = ?, pic_name = ?, remarks = ?
+        sim_time = ?, pic_name = ?, remarks = ?, update_time = ?
         WHERE uuid = ?
         ''', [
         fr.date,
@@ -156,6 +158,7 @@ class DBProvider {
         fr.simTime,
         fr.picName,
         fr.remarks,
+        getEpochTime(),
         fr.uuid,
       ]);
     }

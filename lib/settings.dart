@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'models.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -176,7 +178,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 });
 
                 _sync().then((value) {
-                  if (value) {
+                  if (value[0]) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Data synced'),
@@ -184,10 +186,13 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     );
                   } else {
+                    final errorMessage = value[1];
+
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Some error occured during sync'),
-                        duration: Duration(seconds: 3),
+                      SnackBar(
+                        content: Text(
+                            'Some error occured during sync: $errorMessage'),
+                        duration: const Duration(seconds: 3),
                       ),
                     );
                   }
@@ -205,30 +210,36 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<bool> _sync() async {
+  Future<List<dynamic>> _sync() async {
     final serverAddress = _serverAddressController.text.trim();
+
+    Response response;
+    dynamic jsonData;
 
     try {
       setState(() {
-        _syncMessage = 'Connecting to $serverAddress...';
+        _syncMessage = 'Downloading from $serverAddress...';
       });
 
-      final response = await http.get(Uri.parse('$serverAddress/sync/data'));
-      final jsonData = jsonDecode(response.body);
-
-      setState(() {
-        _syncMessage = 'Processing records...';
-      });
-
-      for (var i = 0; i < jsonData.length; i++) {
-        print(jsonData[i]);
-        print(FlightRecord.fromJson(jsonData[i]).uuid);
-      }
-
-      return true;
+      response = await http.get(Uri.parse('$serverAddress/sync/data'));
     } catch (e) {
-      print(e);
-      return false;
+      return [false, e];
     }
+
+    try {
+      jsonData = jsonDecode(response.body);
+    } catch (e) {
+      return [false, e];
+    }
+
+    setState(() {
+      _syncMessage = 'Processing records...';
+    });
+
+    for (var i = 0; i < jsonData.length; i++) {
+      print(FlightRecord.fromJson(jsonData[i]).uuid);
+    }
+
+    return [true, ''];
   }
 }
