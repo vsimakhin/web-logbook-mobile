@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:uuid/uuid.dart';
+import 'models.dart';
 
 class DBProvider {
   DBProvider._();
@@ -50,15 +52,20 @@ class DBProvider {
   static const viewLogbook = '''
     CREATE VIEW IF NOT EXISTS logbook_view
     AS
-    SELECT uuid, date, substr(date,7,4) || substr(date,4,2) || substr(date,0,3) as m_date, departure_place, departure_time,
-    arrival_place, arrival_time, aircraft_model, reg_name, se_time, me_time, mcc_time, total_time, iif(day_landings='',0,day_landings) as day_landings, iif(night_landings='',0,night_landings) as night_landings,
-    night_time, ifr_time, pic_time, co_pilot_time, dual_time, instructor_time, sim_type, sim_time, pic_name, remarks
+    SELECT uuid, date,
+      substr(date,7,4) || substr(date,4,2) || substr(date,0,3) as m_date,
+      departure_place, departure_time, arrival_place, arrival_time,
+      aircraft_model, reg_name, se_time, me_time, mcc_time, total_time,
+      iif(day_landings='',0,day_landings) as day_landings,
+      iif(night_landings='',0,night_landings) as night_landings,
+      night_time, ifr_time, pic_time, co_pilot_time, dual_time, instructor_time,
+      sim_type, sim_time, pic_name, remarks
     FROM logbook;
   ''';
 
   Future<Database> initDB() async {
     String path = join(await getDatabasesPath(), 'logbook.db');
-    // await deleteDatabase(path);
+
     return await openDatabase(path, version: 1,
         onCreate: (Database db, int version) async {
       await db.execute(tableLogbook);
@@ -75,43 +82,45 @@ class DBProvider {
     );
   }
 
-  Future saveFlightRecord(Map<String, Object?> values, bool isNewFlight) async {
+  Future saveFlightRecord(FlightRecord fr) async {
     final db = await database;
 
-    if (isNewFlight) {
+    if (fr.isNew) {
+      fr.uuid = const Uuid().v4();
+
       return await db!.rawInsert('''INSERT INTO logbook
         (uuid, date, departure_place, departure_time, arrival_place,
         arrival_time, aircraft_model, reg_name, se_time, me_time,
         mcc_time, total_time, day_landings, night_landings, night_time,
         ifr_time, pic_time, co_pilot_time, dual_time, instructor_time,
         sim_type, sim_time, pic_name, remarks)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES
+        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', [
-        values['uuid'],
-        values['date'],
-        values['departure_place'],
-        values['departure_time'],
-        values['arrival_place'],
-        values['arrival_time'],
-        values['aircraft_model'],
-        values['reg_name'],
-        values['se_time'],
-        values['me_time'],
-        values['mcc_time'],
-        values['total_time'],
-        values['day_landings'],
-        values['night_landings'],
-        values['night_time'],
-        values['ifr_time'],
-        values['pic_time'],
-        values['co_pilot_time'],
-        values['dual_time'],
-        values['instructor_time'],
-        values['sim_type'],
-        values['sim_time'],
-        values['pic_name'],
-        values['remarks'],
+        fr.uuid,
+        fr.date,
+        fr.departurePlace,
+        fr.departureTime,
+        fr.arrivalPlace,
+        fr.arrivalTime,
+        fr.aircraftModel,
+        fr.aircraftReg,
+        fr.timeSE,
+        fr.timeME,
+        fr.timeMCC,
+        fr.timeTT,
+        fr.dayLandings,
+        fr.nightLandings,
+        fr.timeNight,
+        fr.timeIFR,
+        fr.timePIC,
+        fr.timeCOP,
+        fr.timeDual,
+        fr.timeInstr,
+        fr.simType,
+        fr.simTime,
+        fr.picName,
+        fr.remarks,
       ]);
     } else {
       return await db!.rawUpdate('''UPDATE logbook
@@ -124,30 +133,30 @@ class DBProvider {
         sim_time = ?, pic_name = ?, remarks = ?
         WHERE uuid = ?
         ''', [
-        values['date'],
-        values['departure_place'],
-        values['departure_time'],
-        values['arrival_place'],
-        values['arrival_time'],
-        values['aircraft_model'],
-        values['reg_name'],
-        values['se_time'],
-        values['me_time'],
-        values['mcc_time'],
-        values['total_time'],
-        values['day_landings'],
-        values['night_landings'],
-        values['night_time'],
-        values['ifr_time'],
-        values['pic_time'],
-        values['co_pilot_time'],
-        values['dual_time'],
-        values['instructor_time'],
-        values['sim_type'],
-        values['sim_time'],
-        values['pic_name'],
-        values['remarks'],
-        values['uuid'],
+        fr.date,
+        fr.departurePlace,
+        fr.departureTime,
+        fr.arrivalPlace,
+        fr.arrivalTime,
+        fr.aircraftModel,
+        fr.aircraftReg,
+        fr.timeSE,
+        fr.timeME,
+        fr.timeMCC,
+        fr.timeTT,
+        fr.dayLandings,
+        fr.nightLandings,
+        fr.timeNight,
+        fr.timeIFR,
+        fr.timePIC,
+        fr.timeCOP,
+        fr.timeDual,
+        fr.timeInstr,
+        fr.simType,
+        fr.simTime,
+        fr.picName,
+        fr.remarks,
+        fr.uuid,
       ]);
     }
   }

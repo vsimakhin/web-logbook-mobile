@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'db.dart';
 import 'main.dart';
+import 'models.dart';
 
 class FlightPage extends StatefulWidget {
   const FlightPage({Key? key, required this.flightRecord}) : super(key: key);
 
-  final Map<String, dynamic> flightRecord;
+  final FlightRecord flightRecord;
 
   @override
   State<FlightPage> createState() => _FlightPageState();
@@ -17,7 +17,7 @@ class FlightPage extends StatefulWidget {
 class _FlightPageState extends State<FlightPage> {
   _FlightPageState();
 
-  late Map<String, dynamic> flightRecord;
+  late FlightRecord flightRecord;
 
   final _formKey = GlobalKey<FormState>();
   final _date = TextEditingController();
@@ -44,90 +44,58 @@ class _FlightPageState extends State<FlightPage> {
   final _simTime = TextEditingController();
   final _remarks = TextEditingController();
 
-  bool isNewFlight = true;
   String pageHeader = 'New Flight';
-  String uuid = '';
 
   @override
   void initState() {
     super.initState();
     flightRecord = widget.flightRecord;
 
-    if (flightRecord['uuid'] != '') {
-      isNewFlight = false;
-
+    if (!flightRecord.isNew) {
       // existing flight record
-      uuid = flightRecord['uuid'];
-      _date.text = flightRecord['date'];
-      _departurePlace.text = flightRecord['departure_place'];
-      _departureTime.text = flightRecord['departure_time'];
-      _arrivalPlace.text = flightRecord['arrival_place'];
-      _arrivalTime.text = flightRecord['arrival_time'];
-      _aircraftModel.text = flightRecord['aircraft_model'];
-      _aircraftReg.text = flightRecord['reg_name'];
-      _timeSE.text = flightRecord['se_time'];
-      _timeME.text = flightRecord['me_time'];
-      _timeMCC.text = flightRecord['mcc_time'];
-      _timeTT.text = flightRecord['total_time'];
-      _dayLandings.text = flightRecord['day_landings'].toString();
-      _nightLandings.text = flightRecord['night_landings'].toString();
-      _timeNight.text = flightRecord['night_time'];
-      _timeIFR.text = flightRecord['ifr_time'];
-      _timePIC.text = flightRecord['pic_time'];
-      _timeCOP.text = flightRecord['co_pilot_time'];
-      _timeDual.text = flightRecord['dual_time'];
-      _timeInstr.text = flightRecord['instructor_time'];
-      _simType.text = flightRecord['sim_type'];
-      _simTime.text = flightRecord['sim_time'];
-      _picName.text = flightRecord['pic_name'];
-      _remarks.text = flightRecord['remarks'];
+      _date.text = flightRecord.date;
+      _departurePlace.text = flightRecord.departurePlace;
+      _departureTime.text = flightRecord.departureTime;
+      _arrivalPlace.text = flightRecord.arrivalPlace;
+      _arrivalTime.text = flightRecord.arrivalTime;
+      _aircraftModel.text = flightRecord.aircraftModel;
+      _aircraftReg.text = flightRecord.aircraftReg;
+      _timeSE.text = flightRecord.timeSE;
+      _timeME.text = flightRecord.timeME;
+      _timeMCC.text = flightRecord.timeMCC;
+      _timeTT.text = flightRecord.timeTT;
+      if (flightRecord.dayLandings == 0) {
+        _dayLandings.text = '';
+      } else {
+        _dayLandings.text = flightRecord.dayLandings.toString();
+      }
+      if (flightRecord.nightLandings == 0) {
+        _nightLandings.text = '';
+      } else {
+        _nightLandings.text = flightRecord.nightLandings.toString();
+      }
+      _timeNight.text = flightRecord.timeNight;
+      _timeIFR.text = flightRecord.timeIFR;
+      _timePIC.text = flightRecord.timePIC;
+      _timeCOP.text = flightRecord.timeCOP;
+      _timeDual.text = flightRecord.timeDual;
+      _timeInstr.text = flightRecord.timeInstr;
+      _simType.text = flightRecord.simType;
+      _simTime.text = flightRecord.simTime;
+      _picName.text = flightRecord.picName;
+      _remarks.text = flightRecord.remarks;
 
       pageHeader =
-          "Flight ${flightRecord['departure_place']} - ${flightRecord['arrival_place']}";
+          "Flight ${flightRecord.departurePlace} - ${flightRecord.arrivalPlace}";
     } else {
-      isNewFlight = true;
-      // new flight record
-
       _date.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
     }
   }
 
   void _saveFlight() {
-    if (isNewFlight) {
-      uuid = const Uuid().v4();
-    }
+    DBProvider.db.saveFlightRecord(flightRecord);
 
-    DBProvider.db.saveFlightRecord(
-      {
-        'uuid': uuid,
-        'date': _date.text,
-        'departure_place': _departurePlace.text,
-        'departure_time': _departureTime.text,
-        'arrival_place': _arrivalPlace.text,
-        'arrival_time': _arrivalTime.text,
-        'aircraft_model': _aircraftModel.text,
-        'reg_name': _aircraftReg.text,
-        'se_time': _timeSE.text,
-        'me_time': _timeME.text,
-        'mcc_time': _timeMCC.text,
-        'total_time': _timeTT.text,
-        'day_landings': _dayLandings.text,
-        'night_landings': _nightLandings.text,
-        'night_time': _timeNight.text,
-        'ifr_time': _timeIFR.text,
-        'pic_time': _timePIC.text,
-        'co_pilot_time': _timeCOP.text,
-        'dual_time': _timeDual.text,
-        'instructor_time': _timeInstr.text,
-        'sim_type': _simType.text,
-        'sim_time': _simTime.text,
-        'pic_name': _picName.text,
-        'remarks': _remarks.text,
-      },
-      isNewFlight,
-    );
-
-    if (isNewFlight) {
+    if (flightRecord.isNew) {
       setState(() {
         _departurePlace.text = _arrivalPlace.text;
         _departureTime.clear();
@@ -511,10 +479,36 @@ class _FlightPageState extends State<FlightPage> {
             ElevatedButton(
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
+                  flightRecord.date = _date.text;
+                  flightRecord.departurePlace = _departurePlace.text;
+                  flightRecord.departureTime = _departureTime.text;
+                  flightRecord.arrivalPlace = _arrivalPlace.text;
+                  flightRecord.arrivalTime = _arrivalTime.text;
+                  flightRecord.aircraftModel = _aircraftModel.text;
+                  flightRecord.aircraftReg = _aircraftReg.text;
+                  flightRecord.timeSE = _timeSE.text;
+                  flightRecord.timeME = _timeME.text;
+                  flightRecord.timeMCC = _timeMCC.text;
+                  flightRecord.timeTT = _timeTT.text;
+                  flightRecord.dayLandings =
+                      int.tryParse(_dayLandings.text) ?? 0;
+                  flightRecord.nightLandings =
+                      int.tryParse(_nightLandings.text) ?? 0;
+                  flightRecord.timeNight = _timeNight.text;
+                  flightRecord.timeIFR = _timeIFR.text;
+                  flightRecord.timePIC = _timePIC.text;
+                  flightRecord.timeCOP = _timeCOP.text;
+                  flightRecord.timeDual = _timeDual.text;
+                  flightRecord.timeInstr = _timeInstr.text;
+                  flightRecord.simType = _simType.text;
+                  flightRecord.simTime = _simTime.text;
+                  flightRecord.picName = _picName.text;
+                  flightRecord.remarks = _remarks.text;
+
                   _saveFlight();
 
                   late String infoMsg;
-                  if (isNewFlight) {
+                  if (flightRecord.isNew) {
                     infoMsg = 'Flight record has been added';
                   } else {
                     infoMsg = 'Flight record has been updated';
@@ -532,9 +526,9 @@ class _FlightPageState extends State<FlightPage> {
             ),
             const Spacer(),
             Visibility(
-              visible: !isNewFlight,
+              visible: !flightRecord.isNew,
               child: _DeleteFlightRecordButton(
-                uuid: uuid,
+                uuid: flightRecord.uuid,
                 flightRecordName:
                     '${_departurePlace.text} - ${_arrivalPlace.text}',
               ),

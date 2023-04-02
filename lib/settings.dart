@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'models.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -14,8 +17,10 @@ class _SettingsPageState extends State<SettingsPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _useAuthentication = false;
+  bool _isSyncing = false;
+  String _syncMessage = "";
 
-  final storage = FlutterSecureStorage();
+  final storage = const FlutterSecureStorage();
 
   @override
   void initState() {
@@ -120,6 +125,17 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ],
                 ),
+              const SizedBox(height: 40),
+              Visibility(
+                visible: _isSyncing,
+                child: Row(
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(width: 20),
+                    Text(_syncMessage),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -144,12 +160,75 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const Spacer(),
             ElevatedButton(
-              onPressed: () {},
+              onPressed: () {
+                if (_serverAddressController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter server address'),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                  return;
+                }
+
+                setState(() {
+                  _isSyncing = true;
+                });
+
+                _sync().then((value) {
+                  if (value) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Data synced'),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Some error occured during sync'),
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+
+                  setState(() {
+                    _isSyncing = false;
+                  });
+                });
+              },
               child: const Text('Sync'),
             ),
           ],
         ),
       ],
     );
+  }
+
+  Future<bool> _sync() async {
+    final serverAddress = _serverAddressController.text.trim();
+
+    try {
+      setState(() {
+        _syncMessage = 'Connecting to $serverAddress...';
+      });
+
+      final response = await http.get(Uri.parse('$serverAddress/sync/data'));
+      final jsonData = jsonDecode(response.body);
+
+      setState(() {
+        _syncMessage = 'Processing records...';
+      });
+
+      for (var i = 0; i < jsonData.length; i++) {
+        print(jsonData[i]);
+        print(FlightRecord.fromJson(jsonData[i]).uuid);
+      }
+
+      return true;
+    } catch (e) {
+      print(e);
+      return false;
+    }
   }
 }

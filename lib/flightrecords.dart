@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:web_logbook_mobile/models.dart';
 import 'db.dart';
 import 'flight.dart';
 
@@ -125,26 +126,27 @@ class _FlightRecordsSource extends DataTableSource {
 
   @override
   DataRow getRow(int index) {
-    final row = dataList[index];
+    final fr = FlightRecord.fromData(dataList[index]);
+
     List<DataCell> cells = [];
 
     if (wideScreen) {
       cells = [
-        DataCell(Text(row['date'] ?? '')),
-        DataCell(Text('${row['departure_place']} ${row['departure_time']}')),
-        DataCell(Text('${row['arrival_place']} ${row['arrival_time']}')),
-        DataCell(Text('${row['aircraft_model']} ${row['reg_name']}')),
-        DataCell(Text('${row['total_time']}')),
-        DataCell(Text('${row['pic_name']}')),
-        DataCell(Text('${row['day_landings']}/${row['night_landings']}')),
-        DataCell(Text('${row['sim_type']} ${row['sim_time']}')),
+        DataCell(Text(fr.date)),
+        DataCell(Text('${fr.departurePlace} ${fr.departureTime}')),
+        DataCell(Text('${fr.arrivalPlace} ${fr.arrivalTime}')),
+        DataCell(Text('${fr.aircraftModel} ${fr.aircraftReg}')),
+        DataCell(Text(fr.timeTT)),
+        DataCell(Text(fr.picName)),
+        DataCell(Text('${fr.dayLandings}/${fr.nightLandings}')),
+        DataCell(Text('${fr.simType} ${fr.simTime}')),
       ];
     } else {
       cells = [
-        DataCell(Text(row['date'] ?? '')),
-        DataCell(Text('${row['departure_place']} ${row['departure_time']}')),
-        DataCell(Text('${row['arrival_place']} ${row['arrival_time']}')),
-        DataCell(Text('${row['aircraft_model']} ${row['reg_name']}')),
+        DataCell(Text(fr.date)),
+        DataCell(Text('${fr.departurePlace} ${fr.departureTime}')),
+        DataCell(Text('${fr.arrivalPlace} ${fr.arrivalTime}')),
+        DataCell(Text('${fr.aircraftModel} ${fr.aircraftReg}')),
       ];
     }
 
@@ -155,32 +157,7 @@ class _FlightRecordsSource extends DataTableSource {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => FlightPage(flightRecord: {
-                'uuid': row['uuid'],
-                'date': row['date'],
-                'departure_place': row['departure_place'],
-                'departure_time': row['departure_time'],
-                'arrival_place': row['arrival_place'],
-                'arrival_time': row['arrival_time'],
-                'aircraft_model': row['aircraft_model'],
-                'reg_name': row['reg_name'],
-                'se_time': row['se_time'],
-                'me_time': row['me_time'],
-                'mcc_time': row['mcc_time'],
-                'total_time': row['total_time'],
-                'day_landings': row['day_landings'],
-                'night_landings': row['night_landings'],
-                'night_time': row['night_time'],
-                'ifr_time': row['ifr_time'],
-                'pic_time': row['pic_time'],
-                'co_pilot_time': row['co_pilot_time'],
-                'dual_time': row['dual_time'],
-                'instructor_time': row['instructor_time'],
-                'sim_type': row['sim_type'],
-                'sim_time': row['sim_time'],
-                'pic_name': row['pic_name'],
-                'remarks': row['remarks'],
-              }),
+              builder: (context) => FlightPage(flightRecord: fr),
             )).then((value) {
           if (value != null) {
             if (value) {

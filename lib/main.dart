@@ -1,3 +1,5 @@
+import 'package:web_logbook_mobile/models.dart';
+
 import 'flight.dart';
 import 'flightrecords.dart';
 import 'settings.dart';
@@ -25,7 +27,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _children = [
       const FlightRecordsPage(),
-      const FlightPage(flightRecord: {'uuid': ''}),
+      FlightPage(flightRecord: FlightRecord(isNew: true)),
       const SettingsPage(),
     ];
     _currentIndex = 0;
