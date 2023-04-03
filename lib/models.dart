@@ -86,7 +86,7 @@ class FlightRecord {
       simTime: data['sim_time'] as String,
       picName: data['pic_name'] as String,
       remarks: data['remarks'] as String,
-      updateTime: int.tryParse(data['remarks'] as String) ?? getEpochTime(),
+      updateTime: int.tryParse(data['update_time'] as String) ?? getEpochTime(),
     );
   }
 
@@ -118,5 +118,83 @@ class FlightRecord {
       remarks: data['remarks'] as String,
       updateTime: data['update_time'] as int,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'uuid': uuid,
+      'date': date,
+      'departure': {
+        'place': departurePlace,
+        'time': departureTime,
+      },
+      'arrival': {
+        'place': arrivalPlace,
+        'time': arrivalTime,
+      },
+      'aircraft': {
+        'model': aircraftModel,
+        'reg_name': aircraftReg,
+      },
+      'time': {
+        'se_time': timeSE,
+        'me_time': timeME,
+        'mcc_time': timeMCC,
+        'total_time': timeTT,
+        'ifr_time': timeIFR,
+        'pic_time': timePIC,
+        'co_pilot_time': timeCOP,
+        'dual_time': timeDual,
+        'instructor_time': timeInstr,
+        'night_time': timeNight,
+      },
+      'landings': {
+        'day': dayLandings,
+        'night': nightLandings,
+      },
+      'sim': {
+        'type': simType,
+        'time': simTime,
+      },
+      'pic_name': picName,
+      'remarks': remarks,
+      'update_time': updateTime,
+    };
+  }
+}
+
+class DeletedItem {
+  DeletedItem({
+    required this.uuid,
+    required this.tableName,
+    required this.deleteTime,
+  });
+
+  String uuid;
+  String tableName;
+  int deleteTime;
+
+  factory DeletedItem.fromJson(Map<String, dynamic> data) {
+    return DeletedItem(
+      uuid: data['uuid'] as String,
+      tableName: data['table_name'] as String,
+      deleteTime: int.tryParse(data['delete_time'] as String) ?? getEpochTime(),
+    );
+  }
+
+  // factory DeletedItem.fromData(Map<String, dynamic> data) {
+  //   return DeletedItem(
+  //     uuid: data['uuid'] as String,
+  //     tableName: data['table_name'] as String,
+  //     deleteTime: data['delete_time'] as int,
+  //   );
+  // }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'uuid': uuid,
+      'table_name': tableName,
+      'delete_time': deleteTime,
+    };
   }
 }

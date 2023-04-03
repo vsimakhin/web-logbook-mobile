@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:http/http.dart' as http;
-import 'package:http/http.dart';
+import 'db.dart';
 import 'models.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -20,7 +19,6 @@ class _SettingsPageState extends State<SettingsPage> {
   final _passwordController = TextEditingController();
   bool _useAuthentication = false;
   bool _isSyncing = false;
-  String _syncMessage = "";
 
   final storage = const FlutterSecureStorage();
 
@@ -130,11 +128,11 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 40),
               Visibility(
                 visible: _isSyncing,
-                child: Row(
+                child: const Row(
                   children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(width: 20),
-                    Text(_syncMessage),
+                    CircularProgressIndicator(),
+                    SizedBox(width: 20),
+                    Text('Syncing in progress...'),
                   ],
                 ),
               ),
@@ -211,34 +209,115 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<List<dynamic>> _sync() async {
+    final httpClient = HttpClient();
+    httpClient.badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true;
+
     final serverAddress = _serverAddressController.text.trim();
 
-    Response response;
     dynamic jsonData;
+    String sessionValue = '';
 
-    try {
-      setState(() {
-        _syncMessage = 'Downloading from $serverAddress...';
+    if (_useAuthentication) {
+      final loginUrl = Uri.parse('$serverAddress/login');
+      final loginPayload = jsonEncode({
+        'login': _usernameController.text,
+        'password': _passwordController.text
       });
 
-      response = await http.get(Uri.parse('$serverAddress/sync/data'));
+      final req = await httpClient.postUrl(loginUrl);
+      req.headers.contentType = ContentType.json;
+      req.followRedirects = false;
+      req.write(loginPayload);
+      final res = await req.close();
+      final sessionCookie = res.headers['set-cookie'];
+      sessionValue = sessionCookie![0].split(';')[0].split('=')[1];
+    }
+
+    // get deleted items
+    try {
+      final req =
+          await httpClient.getUrl(Uri.parse('$serverAddress/sync/deleted'));
+      if (_useAuthentication) {
+        req.cookies.add(Cookie('session', sessionValue));
+      }
+      final res = await req.close();
+      final body = await res.transform(utf8.decoder).join();
+
+      if (res.statusCode == 200) {
+        jsonData = jsonDecode(body);
+
+        for (var i = 0; i < jsonData.length; i++) {
+          await DBProvider.db
+              .syncDeletedItems(DeletedItem.fromJson(jsonData[i]));
+        }
+      } else {
+        return [false, 'response code ${res.statusCode}'];
+      }
     } catch (e) {
       return [false, e];
+    }
+
+    // upload records to the main app
+    List<FlightRecord> listFlightRecords = [];
+    final rawFlightRecord = await DBProvider.db.getAllFlightRecords();
+    for (var i = 0; i < rawFlightRecord.length; i++) {
+      listFlightRecords.add(FlightRecord.fromData(rawFlightRecord[i]));
+    }
+
+    List<DeletedItem> listDeletedItems = [];
+    final rawDeletedItems = await DBProvider.db.getDeletedItems();
+    for (var i = 0; i < rawDeletedItems.length; i++) {
+      listDeletedItems.add(DeletedItem.fromJson(rawDeletedItems[i]));
     }
 
     try {
-      jsonData = jsonDecode(response.body);
+      final jsonPayload = {
+        'flight_records': listFlightRecords,
+        'deleted_items': listDeletedItems
+      };
+
+      final req =
+          await httpClient.postUrl(Uri.parse('$serverAddress/sync/upload'));
+      if (_useAuthentication) {
+        req.cookies.add(Cookie('session', sessionValue));
+      }
+      req.headers.contentType = ContentType.json;
+      req.write(jsonEncode(jsonPayload));
+      final res = await req.close();
+
+      if (res.statusCode != 200) {
+        return [false, 'response code ${res.statusCode}'];
+      }
     } catch (e) {
       return [false, e];
     }
 
-    setState(() {
-      _syncMessage = 'Processing records...';
-    });
+    // connect and get the recordsets to sync
+    try {
+      final req =
+          await httpClient.getUrl(Uri.parse('$serverAddress/sync/data'));
+      if (_useAuthentication) {
+        req.cookies.add(Cookie('session', sessionValue));
+      }
 
-    for (var i = 0; i < jsonData.length; i++) {
-      print(FlightRecord.fromJson(jsonData[i]).uuid);
+      final res = await req.close();
+      final body = await res.transform(utf8.decoder).join();
+
+      if (res.statusCode == 200) {
+        jsonData = jsonDecode(body);
+        for (var i = 0; i < jsonData.length; i++) {
+          await DBProvider.db
+              .syncFlightRecord(FlightRecord.fromJson(jsonData[i]));
+        }
+      } else {
+        return [false, 'response code ${res.statusCode}'];
+      }
+    } catch (e) {
+      return [false, e];
     }
+
+    httpClient.close();
 
     return [true, ''];
   }

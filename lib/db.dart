@@ -64,14 +64,32 @@ class DBProvider {
     FROM logbook;
   ''';
 
+  static const deletedItems = '''
+    CREATE TABLE IF NOT EXISTS deleted_items (
+        uuid TEXT PRIMARY_KEY,
+        table_name TEXT NOT NULL,
+        delete_time TEXT NOT NULL
+    );
+  ''';
+
   Future<Database> initDB() async {
     String path = join(await getDatabasesPath(), 'logbook.db');
 
-    return await openDatabase(path, version: 1,
-        onCreate: (Database db, int version) async {
-      await db.execute(tableLogbook);
-      await db.execute(viewLogbook);
-    });
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: (Database db, int version) async {
+        await db.execute(tableLogbook);
+        await db.execute(viewLogbook);
+        await db.execute(deletedItems);
+      },
+      onOpen: (db) async {
+        final oldItem = getEpochTime() - 7776000;
+
+        await db.execute(
+            '''DELETE FROM deleted_items WHERE delete_time < $oldItem''');
+      },
+    );
   }
 
   Future getAllFlightRecords() async {
@@ -80,6 +98,14 @@ class DBProvider {
       '''SELECT *
         FROM logbook_view
         ORDER BY m_date DESC;''',
+    );
+  }
+
+  Future getDeletedItems() async {
+    final db = await database;
+    return await db!.rawQuery(
+      '''SELECT uuid, table_name, delete_time
+        FROM deleted_items''',
     );
   }
 
@@ -167,8 +193,106 @@ class DBProvider {
   Future deleteFlightRecord(String uuid) async {
     final db = await database;
 
-    return await db!.rawDelete('''
-      DELETE FROM logbook WHERE uuid = ?
-      ''', [uuid]);
+    await db!.rawDelete('''DELETE FROM logbook WHERE uuid = ?''', [uuid]);
+    await db.rawInsert(
+      '''
+        INSERT INTO deleted_items (uuid, table_name, delete_time)
+        VALUES(?, ?, ?)''',
+      [uuid, 'logbook', getEpochTime()],
+    );
+  }
+
+  Future syncFlightRecord(FlightRecord fr) async {
+    final db = await database;
+
+    final row = await db!.rawQuery(
+      '''SELECT * FROM logbook WHERE uuid = ?''',
+      [fr.uuid],
+    );
+
+    if (row.isNotEmpty) {
+      final currentFR = FlightRecord.fromData(row[0]);
+      if (currentFR.updateTime < fr.updateTime) {
+        await db.rawUpdate('''UPDATE logbook
+        SET date = ?, departure_place = ?, departure_time = ?,
+        arrival_place = ?, arrival_time = ?, aircraft_model = ?,
+        reg_name = ?, se_time = ?, me_time = ?, mcc_time = ?,
+        total_time = ?, day_landings = ?, night_landings = ?,
+        night_time = ?, ifr_time = ?, pic_time = ?, co_pilot_time = ?,
+        dual_time = ?, instructor_time = ?, sim_type = ?,
+        sim_time = ?, pic_name = ?, remarks = ?, update_time = ?
+        WHERE uuid = ?
+        ''', [
+          fr.date,
+          fr.departurePlace,
+          fr.departureTime,
+          fr.arrivalPlace,
+          fr.arrivalTime,
+          fr.aircraftModel,
+          fr.aircraftReg,
+          fr.timeSE,
+          fr.timeME,
+          fr.timeMCC,
+          fr.timeTT,
+          fr.dayLandings,
+          fr.nightLandings,
+          fr.timeNight,
+          fr.timeIFR,
+          fr.timePIC,
+          fr.timeCOP,
+          fr.timeDual,
+          fr.timeInstr,
+          fr.simType,
+          fr.simTime,
+          fr.picName,
+          fr.remarks,
+          fr.updateTime,
+          fr.uuid,
+        ]);
+      }
+    } else {
+      await db.rawInsert('''INSERT INTO logbook
+        (uuid, date, departure_place, departure_time, arrival_place,
+        arrival_time, aircraft_model, reg_name, se_time, me_time,
+        mcc_time, total_time, day_landings, night_landings, night_time,
+        ifr_time, pic_time, co_pilot_time, dual_time, instructor_time,
+        sim_type, sim_time, pic_name, remarks, update_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', [
+        fr.uuid,
+        fr.date,
+        fr.departurePlace,
+        fr.departureTime,
+        fr.arrivalPlace,
+        fr.arrivalTime,
+        fr.aircraftModel,
+        fr.aircraftReg,
+        fr.timeSE,
+        fr.timeME,
+        fr.timeMCC,
+        fr.timeTT,
+        fr.dayLandings,
+        fr.nightLandings,
+        fr.timeNight,
+        fr.timeIFR,
+        fr.timePIC,
+        fr.timeCOP,
+        fr.timeDual,
+        fr.timeInstr,
+        fr.simType,
+        fr.simTime,
+        fr.picName,
+        fr.remarks,
+        fr.updateTime,
+      ]);
+    }
+  }
+
+  Future syncDeletedItems(DeletedItem di) async {
+    final db = await database;
+
+    await db?.rawDelete(
+        '''DELETE FROM ${di.tableName} WHERE uuid = ?''', [di.uuid]);
   }
 }
