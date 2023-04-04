@@ -2,6 +2,8 @@
 
 This mobile application is a sort of addon to the main [Web Logbook](https://github.com/vsimakhin/web-logbook/). The app is written in the Flutter framework and Dart programming language.
 
+![image](https://user-images.githubusercontent.com/139220/229900051-58702257-17c0-4c3b-a328-3580a817d366.png)
+
 
 # Changelog
 
