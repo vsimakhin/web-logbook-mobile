@@ -1,5 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.web_logbook_mobile">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <application
         android:label="Web Logbook Mobile"
         android:name="${applicationName}"
@@ -30,8 +32,6 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <uses-permission
-            android:name="android.permission.INTERNET"/>
 
     </application>
 </manifest>
