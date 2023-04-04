@@ -1,9 +1,6 @@
-import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'db.dart';
-import 'models.dart';
+import 'sync.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -28,11 +25,14 @@ class _SettingsPageState extends State<SettingsPage> {
     _loadSettings();
   }
 
+  // Load settings from the secure storage since we have there
+  // login and password
   Future<void> _loadSettings() async {
     final serverAddress = await storage.read(key: 'serverAddress');
     final username = await storage.read(key: 'username');
     final password = await storage.read(key: 'password');
     final useAuthentication = await storage.read(key: 'useAuthentication');
+
     setState(() {
       _serverAddressController.text = serverAddress ?? '';
       _usernameController.text = username ?? '';
@@ -41,6 +41,7 @@ class _SettingsPageState extends State<SettingsPage> {
     });
   }
 
+  // Save settings
   Future<void> _saveSettings() async {
     await storage.write(
         key: 'serverAddress', value: _serverAddressController.text);
@@ -48,6 +49,40 @@ class _SettingsPageState extends State<SettingsPage> {
     await storage.write(key: 'password', value: _passwordController.text);
     await storage.write(
         key: 'useAuthentication', value: _useAuthentication.toString());
+  }
+
+  Future<void> _onSyncButtonPressed() async {
+    setState(() {
+      _isSyncing = true;
+    });
+
+    Sync(
+      serverAddress: _serverAddressController.text,
+      useAuthentication: _useAuthentication,
+      username: _usernameController.text,
+      password: _passwordController.text,
+    ).runSync().then((value) {
+      if (value == '') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data synced'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      } else {
+        final error = 'Some error occured during sync: $value';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      setState(() {
+        _isSyncing = false;
+      });
+    });
   }
 
   @override
@@ -76,6 +111,12 @@ class _SettingsPageState extends State<SettingsPage> {
                     Icons.computer,
                   ),
                 ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter Server address';
+                  }
+                  return null;
+                },
               ),
               CheckboxListTile(
                 secondary: const Icon(Icons.how_to_reg),
@@ -160,165 +201,14 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const Spacer(),
             ElevatedButton(
-              onPressed: () {
-                if (_serverAddressController.text.trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter server address'),
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
-                  return;
-                }
-
-                setState(() {
-                  _isSyncing = true;
-                });
-
-                _sync().then((value) {
-                  if (value[0]) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Data synced'),
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
-                  } else {
-                    final errorMessage = value[1];
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            'Some error occured during sync: $errorMessage'),
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  }
-
-                  setState(() {
-                    _isSyncing = false;
-                  });
-                });
-              },
               child: const Text('Sync'),
+              onPressed: () {
+                _onSyncButtonPressed();
+              },
             ),
           ],
         ),
       ],
     );
-  }
-
-  Future<List<dynamic>> _sync() async {
-    final httpClient = HttpClient();
-    httpClient.badCertificateCallback =
-        (X509Certificate cert, String host, int port) => true;
-
-    final serverAddress = _serverAddressController.text.trim();
-
-    dynamic jsonData;
-    String sessionValue = '';
-
-    if (_useAuthentication) {
-      final loginUrl = Uri.parse('$serverAddress/login');
-      final loginPayload = jsonEncode({
-        'login': _usernameController.text,
-        'password': _passwordController.text
-      });
-
-      final req = await httpClient.postUrl(loginUrl);
-      req.headers.contentType = ContentType.json;
-      req.followRedirects = false;
-      req.write(loginPayload);
-      final res = await req.close();
-      final sessionCookie = res.headers['set-cookie'];
-      sessionValue = sessionCookie![0].split(';')[0].split('=')[1];
-    }
-
-    // get deleted items
-    try {
-      final req =
-          await httpClient.getUrl(Uri.parse('$serverAddress/sync/deleted'));
-      if (_useAuthentication) {
-        req.cookies.add(Cookie('session', sessionValue));
-      }
-      final res = await req.close();
-      final body = await res.transform(utf8.decoder).join();
-
-      if (res.statusCode == 200) {
-        jsonData = jsonDecode(body);
-
-        for (var i = 0; i < jsonData.length; i++) {
-          await DBProvider.db
-              .syncDeletedItems(DeletedItem.fromJson(jsonData[i]));
-        }
-      } else {
-        return [false, 'response code ${res.statusCode}'];
-      }
-    } catch (e) {
-      return [false, e];
-    }
-
-    // upload records to the main app
-    List<FlightRecord> listFlightRecords = [];
-    final rawFlightRecord = await DBProvider.db.getAllFlightRecords();
-    for (var i = 0; i < rawFlightRecord.length; i++) {
-      listFlightRecords.add(FlightRecord.fromData(rawFlightRecord[i]));
-    }
-
-    List<DeletedItem> listDeletedItems = [];
-    final rawDeletedItems = await DBProvider.db.getDeletedItems();
-    for (var i = 0; i < rawDeletedItems.length; i++) {
-      listDeletedItems.add(DeletedItem.fromJson(rawDeletedItems[i]));
-    }
-
-    try {
-      final jsonPayload = {
-        'flight_records': listFlightRecords,
-        'deleted_items': listDeletedItems
-      };
-
-      final req =
-          await httpClient.postUrl(Uri.parse('$serverAddress/sync/upload'));
-      if (_useAuthentication) {
-        req.cookies.add(Cookie('session', sessionValue));
-      }
-      req.headers.contentType = ContentType.json;
-      req.write(jsonEncode(jsonPayload));
-      final res = await req.close();
-
-      if (res.statusCode != 200) {
-        return [false, 'response code ${res.statusCode}'];
-      }
-    } catch (e) {
-      return [false, e];
-    }
-
-    // connect and get the recordsets to sync
-    try {
-      final req =
-          await httpClient.getUrl(Uri.parse('$serverAddress/sync/data'));
-      if (_useAuthentication) {
-        req.cookies.add(Cookie('session', sessionValue));
-      }
-
-      final res = await req.close();
-      final body = await res.transform(utf8.decoder).join();
-
-      if (res.statusCode == 200) {
-        jsonData = jsonDecode(body);
-        for (var i = 0; i < jsonData.length; i++) {
-          await DBProvider.db
-              .syncFlightRecord(FlightRecord.fromJson(jsonData[i]));
-        }
-      } else {
-        return [false, 'response code ${res.statusCode}'];
-      }
-    } catch (e) {
-      return [false, e];
-    }
-
-    httpClient.close();
-
-    return [true, ''];
   }
 }

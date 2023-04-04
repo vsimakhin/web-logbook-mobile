@@ -13,7 +13,6 @@ class DBProvider {
   Future<Database?> get database async {
     if (_database != null) return _database;
 
-    // if _database is null we instantiate it
     _database = await initDB();
     return _database;
   }
@@ -72,6 +71,9 @@ class DBProvider {
     );
   ''';
 
+  /// Opens the sqlite3 DB, runs the sql queries to create
+  /// a DB structure on first run and might some upgrade sql
+  /// queries in future
   Future<Database> initDB() async {
     String path = join(await getDatabasesPath(), 'logbook.db');
 
@@ -83,39 +85,46 @@ class DBProvider {
         await db.execute(viewLogbook);
         await db.execute(deletedItems);
       },
-      onOpen: (db) async {
-        final oldItem = getEpochTime() - 7776000;
-
-        await db.execute(
-            '''DELETE FROM deleted_items WHERE delete_time < $oldItem''');
-      },
+      onOpen: (db) async {},
     );
   }
 
+  /// Returns all flight records from the database and orders them by date
   Future getAllFlightRecords() async {
     final db = await database;
     return await db!.rawQuery(
-      '''SELECT *
-        FROM logbook_view
-        ORDER BY m_date DESC;''',
+      '''SELECT * FROM logbook_view ORDER BY m_date DESC''',
     );
   }
 
+  /// Returns all removed items
   Future getDeletedItems() async {
     final db = await database;
     return await db!.rawQuery(
-      '''SELECT uuid, table_name, delete_time
-        FROM deleted_items''',
+      '''SELECT uuid, table_name, delete_time FROM deleted_items''',
     );
   }
 
+  /// Saves a flight record. If the flight record is new,
+  /// generates a new UUID and inserts it into the database. Otherwise, updates
+  /// the existing record with the latest data.
   Future saveFlightRecord(FlightRecord fr) async {
-    final db = await database;
-
     if (fr.isNew) {
       fr.uuid = const Uuid().v4();
+      fr.updateTime = getEpochTime();
+      return await insertFlightRecord(fr);
+    } else {
+      fr.updateTime = getEpochTime();
+      return await updateFlightRecord(fr);
+    }
+  }
 
-      return await db!.rawInsert('''INSERT INTO logbook
+  /// Creates a new record in the logbook table with the provided
+  /// flight record data [fr].
+  Future insertFlightRecord(FlightRecord fr) async {
+    final db = await database;
+
+    return await db!.rawInsert('''INSERT INTO logbook
         (uuid, date, departure_place, departure_time, arrival_place,
         arrival_time, aircraft_model, reg_name, se_time, me_time,
         mcc_time, total_time, day_landings, night_landings, night_time,
@@ -124,34 +133,40 @@ class DBProvider {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', [
-        fr.uuid,
-        fr.date,
-        fr.departurePlace,
-        fr.departureTime,
-        fr.arrivalPlace,
-        fr.arrivalTime,
-        fr.aircraftModel,
-        fr.aircraftReg,
-        fr.timeSE,
-        fr.timeME,
-        fr.timeMCC,
-        fr.timeTT,
-        fr.dayLandings,
-        fr.nightLandings,
-        fr.timeNight,
-        fr.timeIFR,
-        fr.timePIC,
-        fr.timeCOP,
-        fr.timeDual,
-        fr.timeInstr,
-        fr.simType,
-        fr.simTime,
-        fr.picName,
-        fr.remarks,
-        getEpochTime(),
-      ]);
-    } else {
-      return await db!.rawUpdate('''UPDATE logbook
+      fr.uuid,
+      fr.date,
+      fr.departurePlace,
+      fr.departureTime,
+      fr.arrivalPlace,
+      fr.arrivalTime,
+      fr.aircraftModel,
+      fr.aircraftReg,
+      fr.timeSE,
+      fr.timeME,
+      fr.timeMCC,
+      fr.timeTT,
+      fr.dayLandings,
+      fr.nightLandings,
+      fr.timeNight,
+      fr.timeIFR,
+      fr.timePIC,
+      fr.timeCOP,
+      fr.timeDual,
+      fr.timeInstr,
+      fr.simType,
+      fr.simTime,
+      fr.picName,
+      fr.remarks,
+      fr.updateTime,
+    ]);
+  }
+
+  /// Updates the flight record in the logbook table with the provided
+  /// flight record data [fr].
+  Future updateFlightRecord(FlightRecord fr) async {
+    final db = await database;
+
+    return await db!.rawUpdate('''UPDATE logbook
         SET date = ?, departure_place = ?, departure_time = ?,
         arrival_place = ?, arrival_time = ?, aircraft_model = ?,
         reg_name = ?, se_time = ?, me_time = ?, mcc_time = ?,
@@ -161,47 +176,61 @@ class DBProvider {
         sim_time = ?, pic_name = ?, remarks = ?, update_time = ?
         WHERE uuid = ?
         ''', [
-        fr.date,
-        fr.departurePlace,
-        fr.departureTime,
-        fr.arrivalPlace,
-        fr.arrivalTime,
-        fr.aircraftModel,
-        fr.aircraftReg,
-        fr.timeSE,
-        fr.timeME,
-        fr.timeMCC,
-        fr.timeTT,
-        fr.dayLandings,
-        fr.nightLandings,
-        fr.timeNight,
-        fr.timeIFR,
-        fr.timePIC,
-        fr.timeCOP,
-        fr.timeDual,
-        fr.timeInstr,
-        fr.simType,
-        fr.simTime,
-        fr.picName,
-        fr.remarks,
-        getEpochTime(),
-        fr.uuid,
-      ]);
-    }
+      fr.date,
+      fr.departurePlace,
+      fr.departureTime,
+      fr.arrivalPlace,
+      fr.arrivalTime,
+      fr.aircraftModel,
+      fr.aircraftReg,
+      fr.timeSE,
+      fr.timeME,
+      fr.timeMCC,
+      fr.timeTT,
+      fr.dayLandings,
+      fr.nightLandings,
+      fr.timeNight,
+      fr.timeIFR,
+      fr.timePIC,
+      fr.timeCOP,
+      fr.timeDual,
+      fr.timeInstr,
+      fr.simType,
+      fr.simTime,
+      fr.picName,
+      fr.remarks,
+      fr.updateTime,
+      fr.uuid,
+    ]);
   }
 
+  /// Deletes a [FlightRecord] with the specified [uuid] from the logbook database table.
+  /// The function also inserts a corresponding row into the deleted_items table, indicating
+  /// the deletion and the time it occurred.
   Future deleteFlightRecord(String uuid) async {
     final db = await database;
 
-    await db!.rawDelete('''DELETE FROM logbook WHERE uuid = ?''', [uuid]);
+    await db!.rawDelete(
+      '''DELETE FROM logbook WHERE uuid = ?''',
+      [uuid],
+    );
     await db.rawInsert(
-      '''
-        INSERT INTO deleted_items (uuid, table_name, delete_time)
+      '''INSERT INTO deleted_items (uuid, table_name, delete_time)
         VALUES(?, ?, ?)''',
-      [uuid, 'logbook', getEpochTime()],
+      [
+        uuid,
+        'logbook',
+        getEpochTime(),
+      ],
     );
   }
 
+  /// A function that synchronizes a flight record with the local database.
+  /// Given a [FlightRecord] object [fr], this function checks if a flight record with
+  /// the same UUID already exists in the local database. If it does, and the
+  /// [updateTime] property of the existing record is older than that of [fr], then
+  /// [fr] is updated in the database. If the record doesn't exist in the database,
+  /// [fr] is inserted as a new record.
   Future syncFlightRecord(FlightRecord fr) async {
     final db = await database;
 
@@ -213,86 +242,30 @@ class DBProvider {
     if (row.isNotEmpty) {
       final currentFR = FlightRecord.fromData(row[0]);
       if (currentFR.updateTime < fr.updateTime) {
-        await db.rawUpdate('''UPDATE logbook
-        SET date = ?, departure_place = ?, departure_time = ?,
-        arrival_place = ?, arrival_time = ?, aircraft_model = ?,
-        reg_name = ?, se_time = ?, me_time = ?, mcc_time = ?,
-        total_time = ?, day_landings = ?, night_landings = ?,
-        night_time = ?, ifr_time = ?, pic_time = ?, co_pilot_time = ?,
-        dual_time = ?, instructor_time = ?, sim_type = ?,
-        sim_time = ?, pic_name = ?, remarks = ?, update_time = ?
-        WHERE uuid = ?
-        ''', [
-          fr.date,
-          fr.departurePlace,
-          fr.departureTime,
-          fr.arrivalPlace,
-          fr.arrivalTime,
-          fr.aircraftModel,
-          fr.aircraftReg,
-          fr.timeSE,
-          fr.timeME,
-          fr.timeMCC,
-          fr.timeTT,
-          fr.dayLandings,
-          fr.nightLandings,
-          fr.timeNight,
-          fr.timeIFR,
-          fr.timePIC,
-          fr.timeCOP,
-          fr.timeDual,
-          fr.timeInstr,
-          fr.simType,
-          fr.simTime,
-          fr.picName,
-          fr.remarks,
-          fr.updateTime,
-          fr.uuid,
-        ]);
+        await updateFlightRecord(fr);
       }
     } else {
-      await db.rawInsert('''INSERT INTO logbook
-        (uuid, date, departure_place, departure_time, arrival_place,
-        arrival_time, aircraft_model, reg_name, se_time, me_time,
-        mcc_time, total_time, day_landings, night_landings, night_time,
-        ifr_time, pic_time, co_pilot_time, dual_time, instructor_time,
-        sim_type, sim_time, pic_name, remarks, update_time)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', [
-        fr.uuid,
-        fr.date,
-        fr.departurePlace,
-        fr.departureTime,
-        fr.arrivalPlace,
-        fr.arrivalTime,
-        fr.aircraftModel,
-        fr.aircraftReg,
-        fr.timeSE,
-        fr.timeME,
-        fr.timeMCC,
-        fr.timeTT,
-        fr.dayLandings,
-        fr.nightLandings,
-        fr.timeNight,
-        fr.timeIFR,
-        fr.timePIC,
-        fr.timeCOP,
-        fr.timeDual,
-        fr.timeInstr,
-        fr.simType,
-        fr.simTime,
-        fr.picName,
-        fr.remarks,
-        fr.updateTime,
-      ]);
+      await insertFlightRecord(fr);
     }
   }
 
+  /// Deletes the item with the given UUID from the corresponding table
+  /// in the database.
   Future syncDeletedItems(DeletedItem di) async {
     final db = await database;
 
     await db?.rawDelete(
-        '''DELETE FROM ${di.tableName} WHERE uuid = ?''', [di.uuid]);
+      '''DELETE FROM ${di.tableName} WHERE uuid = ?''',
+      [di.uuid],
+    );
+  }
+
+  /// Removed records from the deleted_items table once they are uploaded
+  /// to the main app. This logic might be changed in future, but for now
+  /// will keep like this
+  Future cleanDeletedItems() async {
+    final db = await database;
+
+    await db?.rawDelete('''DELETE FROM deleted_items''');
   }
 }

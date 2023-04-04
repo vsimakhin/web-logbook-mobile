@@ -92,10 +92,40 @@ class _FlightPageState extends State<FlightPage> {
     }
   }
 
-  void _saveFlight() {
+  // Runs when Save button pressed
+  void _onSaveButtonPressed() {
+    flightRecord.date = _date.text;
+    flightRecord.departurePlace = _departurePlace.text;
+    flightRecord.departureTime = _departureTime.text;
+    flightRecord.arrivalPlace = _arrivalPlace.text;
+    flightRecord.arrivalTime = _arrivalTime.text;
+    flightRecord.aircraftModel = _aircraftModel.text;
+    flightRecord.aircraftReg = _aircraftReg.text;
+    flightRecord.timeSE = _timeSE.text;
+    flightRecord.timeME = _timeME.text;
+    flightRecord.timeMCC = _timeMCC.text;
+    flightRecord.timeTT = _timeTT.text;
+    flightRecord.dayLandings = int.tryParse(_dayLandings.text) ?? 0;
+    flightRecord.nightLandings = int.tryParse(_nightLandings.text) ?? 0;
+    flightRecord.timeNight = _timeNight.text;
+    flightRecord.timeIFR = _timeIFR.text;
+    flightRecord.timePIC = _timePIC.text;
+    flightRecord.timeCOP = _timeCOP.text;
+    flightRecord.timeDual = _timeDual.text;
+    flightRecord.timeInstr = _timeInstr.text;
+    flightRecord.simType = _simType.text;
+    flightRecord.simTime = _simTime.text;
+    flightRecord.picName = _picName.text;
+    flightRecord.remarks = _remarks.text;
+
+    // insert or update the flight record
     DBProvider.db.saveFlightRecord(flightRecord);
 
+    late String infoMsg;
     if (flightRecord.isNew) {
+      // in case the flight record was new, let's pretend there
+      // will be another one, so we can change departure vs arrival
+      // and keep the same aircraft
       setState(() {
         _departurePlace.text = _arrivalPlace.text;
         _departureTime.clear();
@@ -123,9 +153,22 @@ class _FlightPageState extends State<FlightPage> {
 
         _remarks.clear();
       });
+
+      infoMsg = 'Flight record has been added';
+    } else {
+      infoMsg = 'Flight record has been updated';
+      Navigator.pop(context, true);
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(infoMsg),
+        duration: const Duration(seconds: 3),
+      ),
+    );
   }
 
+  /// The function calculates a total flight time
   void _calculateTotalTime() {
     final start = _departureTime.text;
     final end = _arrivalTime.text;
@@ -477,52 +520,12 @@ class _FlightPageState extends State<FlightPage> {
         Row(
           children: [
             ElevatedButton(
+              child: const Text('Save'),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
-                  flightRecord.date = _date.text;
-                  flightRecord.departurePlace = _departurePlace.text;
-                  flightRecord.departureTime = _departureTime.text;
-                  flightRecord.arrivalPlace = _arrivalPlace.text;
-                  flightRecord.arrivalTime = _arrivalTime.text;
-                  flightRecord.aircraftModel = _aircraftModel.text;
-                  flightRecord.aircraftReg = _aircraftReg.text;
-                  flightRecord.timeSE = _timeSE.text;
-                  flightRecord.timeME = _timeME.text;
-                  flightRecord.timeMCC = _timeMCC.text;
-                  flightRecord.timeTT = _timeTT.text;
-                  flightRecord.dayLandings =
-                      int.tryParse(_dayLandings.text) ?? 0;
-                  flightRecord.nightLandings =
-                      int.tryParse(_nightLandings.text) ?? 0;
-                  flightRecord.timeNight = _timeNight.text;
-                  flightRecord.timeIFR = _timeIFR.text;
-                  flightRecord.timePIC = _timePIC.text;
-                  flightRecord.timeCOP = _timeCOP.text;
-                  flightRecord.timeDual = _timeDual.text;
-                  flightRecord.timeInstr = _timeInstr.text;
-                  flightRecord.simType = _simType.text;
-                  flightRecord.simTime = _simTime.text;
-                  flightRecord.picName = _picName.text;
-                  flightRecord.remarks = _remarks.text;
-
-                  _saveFlight();
-
-                  late String infoMsg;
-                  if (flightRecord.isNew) {
-                    infoMsg = 'Flight record has been added';
-                  } else {
-                    infoMsg = 'Flight record has been updated';
-                    Navigator.pop(context, true);
-                  }
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(infoMsg),
-                      duration: const Duration(seconds: 3),
-                    ),
-                  );
+                  _onSaveButtonPressed();
                 }
               },
-              child: const Text('Save'),
             ),
             const Spacer(),
             Visibility(
@@ -540,6 +543,9 @@ class _FlightPageState extends State<FlightPage> {
   }
 }
 
+// Redefined TextFormField for the Time fields
+// It has few validators/formatters, and also copies the Total Time
+// value to the field on the doble tap
 class _TimeField extends StatelessWidget {
   const _TimeField({
     required this.textController,
@@ -575,6 +581,7 @@ class _TimeField extends StatelessWidget {
   }
 }
 
+// just delete button and it's logic
 class _DeleteFlightRecordButton extends StatelessWidget {
   const _DeleteFlightRecordButton(
       {required this.uuid, required this.flightRecordName});
@@ -617,6 +624,7 @@ class _DeleteFlightRecordButton extends StatelessWidget {
   }
 }
 
+// Custom TextInputFormatter for Time fields
 class _TimeFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(

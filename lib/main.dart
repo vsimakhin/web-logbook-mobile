@@ -1,9 +1,8 @@
-import 'package:web_logbook_mobile/models.dart';
-
+import 'models.dart';
+import 'package:flutter/material.dart';
 import 'flight.dart';
 import 'flightrecords.dart';
 import 'settings.dart';
-import 'package:flutter/material.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

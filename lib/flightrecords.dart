@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:web_logbook_mobile/models.dart';
+import 'models.dart';
 import 'db.dart';
 import 'flight.dart';
 
@@ -13,8 +13,8 @@ class FlightRecordsPage extends StatefulWidget {
 class _FlightRecordsPageState extends State<FlightRecordsPage> {
   List<Map<String, dynamic>> _dataList = [];
 
-  static const double headingRowHeight = 40;
-  static const double dataRowHeight = 35;
+  static const double headingRowH = 40;
+  static const double dataRowH = 35;
 
   bool wideScreen = false;
 
@@ -67,14 +67,10 @@ class _FlightRecordsPageState extends State<FlightRecordsPage> {
         ),
       ),
       body: LayoutBuilder(builder: (context, constraints) {
-        final bool shouldBeWideTable = (constraints.maxWidth > 400);
+        wideScreen = (constraints.maxWidth > 400);
+
         final int rowsPerPage =
-            ((constraints.maxHeight - headingRowHeight - 70) ~/ dataRowHeight)
-                    .toInt() +
-                1;
-        if (wideScreen != shouldBeWideTable) {
-          wideScreen = shouldBeWideTable;
-        }
+            (constraints.maxHeight - headingRowH - 70) ~/ dataRowH + 1;
 
         if (_dataList.isNotEmpty) {
           return SingleChildScrollView(
@@ -92,9 +88,9 @@ class _FlightRecordsPageState extends State<FlightRecordsPage> {
                     },
                   ),
                   rowsPerPage: rowsPerPage,
-                  headingRowHeight: headingRowHeight,
-                  dataRowMinHeight: dataRowHeight,
-                  dataRowMaxHeight: dataRowHeight,
+                  headingRowHeight: headingRowH,
+                  dataRowMinHeight: dataRowH,
+                  dataRowMaxHeight: dataRowH,
                   columnSpacing: 20,
                   horizontalMargin: 10,
                   showFirstLastButtons: true,
@@ -111,6 +107,7 @@ class _FlightRecordsPageState extends State<FlightRecordsPage> {
   }
 }
 
+/// Datasource for the Flight Record PaginatedDataTable
 class _FlightRecordsSource extends DataTableSource {
   _FlightRecordsSource({
     required this.dataList,
@@ -142,18 +139,25 @@ class _FlightRecordsSource extends DataTableSource {
         DataCell(Text('${fr.simType} ${fr.simTime}')),
       ];
     } else {
+      // in case it's a SIM session, show SIM Type
+      String aircraftInfo;
+      if (fr.departurePlace == '' && fr.arrivalPlace == '') {
+        aircraftInfo = fr.simType;
+      } else {
+        aircraftInfo = '${fr.aircraftModel} ${fr.aircraftReg}';
+      }
+
       cells = [
         DataCell(Text(fr.date)),
         DataCell(Text('${fr.departurePlace} ${fr.departureTime}')),
         DataCell(Text('${fr.arrivalPlace} ${fr.arrivalTime}')),
-        DataCell(Text('${fr.aircraftModel} ${fr.aircraftReg}')),
+        DataCell(Text(aircraftInfo)),
       ];
     }
 
     return DataRow(
       cells: cells,
       onSelectChanged: (_) {
-        // open flight page here
         Navigator.push(
             context,
             MaterialPageRoute(
