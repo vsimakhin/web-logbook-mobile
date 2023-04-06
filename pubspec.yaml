@@ -1,7 +1,7 @@
 name: web_logbook_mobile
-description: Web Logbook Mobile App.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 1.0.0+1
+description: Web Logbook Mobile App
+publish_to: 'none'
+version: 1.0.1
 
 environment:
   sdk: '>=3.0.0-374.0.dev <4.0.0'
