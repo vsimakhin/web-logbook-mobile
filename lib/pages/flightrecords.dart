@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'models.dart';
-import 'db.dart';
-import 'flight.dart';
+import 'package:web_logbook_mobile/models/models.dart';
+import 'package:web_logbook_mobile/driver/db.dart';
+import 'package:web_logbook_mobile/pages/flight/flight.dart';
 
 class FlightRecordsPage extends StatefulWidget {
   const FlightRecordsPage({Key? key}) : super(key: key);

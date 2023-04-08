@@ -1,7 +1,3 @@
-int getEpochTime() {
-  return DateTime.now().millisecondsSinceEpoch ~/ 1000;
-}
-
 class FlightRecord {
   FlightRecord({
     this.uuid = '',
@@ -59,36 +55,6 @@ class FlightRecord {
   int updateTime;
 
   bool isNew;
-
-  factory FlightRecord.fromJson(Map<String, dynamic> data) {
-    return FlightRecord(
-      uuid: data['uuid'] as String,
-      date: data['date'] as String,
-      departurePlace: data['departure_place'] as String,
-      departureTime: data['departure_time'] as String,
-      arrivalPlace: data['arrival_place'] as String,
-      arrivalTime: data['arrival_time'] as String,
-      aircraftModel: data['aircraft_model'] as String,
-      aircraftReg: data['reg_name'] as String,
-      timeSE: data['se_time'] as String,
-      timeME: data['me_time'] as String,
-      timeMCC: data['mcc_time'] as String,
-      timeTT: data['total_time'] as String,
-      dayLandings: int.tryParse(data['day_landings'] as String) ?? 0,
-      nightLandings: int.tryParse(data['night_landings'] as String) ?? 0,
-      timeNight: data['night_time'] as String,
-      timeIFR: data['ifr_time'] as String,
-      timePIC: data['pic_time'] as String,
-      timeCOP: data['co_pilot_time'] as String,
-      timeDual: data['dual_time'] as String,
-      timeInstr: data['instructor_time'] as String,
-      simType: data['sim_type'] as String,
-      simTime: data['sim_time'] as String,
-      picName: data['pic_name'] as String,
-      remarks: data['remarks'] as String,
-      updateTime: int.tryParse(data['update_time'] as String) ?? getEpochTime(),
-    );
-  }
 
   factory FlightRecord.fromData(Map<String, dynamic> data) {
     return FlightRecord(
@@ -174,21 +140,13 @@ class DeletedItem {
   String tableName;
   int deleteTime;
 
-  factory DeletedItem.fromJson(Map<String, dynamic> data) {
+  factory DeletedItem.fromData(Map<String, dynamic> data) {
     return DeletedItem(
       uuid: data['uuid'] as String,
       tableName: data['table_name'] as String,
-      deleteTime: int.tryParse(data['delete_time'] as String) ?? getEpochTime(),
+      deleteTime: data['delete_time'] as int,
     );
   }
-
-  // factory DeletedItem.fromData(Map<String, dynamic> data) {
-  //   return DeletedItem(
-  //     uuid: data['uuid'] as String,
-  //     tableName: data['table_name'] as String,
-  //     deleteTime: data['delete_time'] as int,
-  //   );
-  // }
 
   Map<String, dynamic> toJson() {
     return {
@@ -197,4 +155,53 @@ class DeletedItem {
       'delete_time': deleteTime,
     };
   }
+}
+
+class Airport {
+  Airport({
+    required this.icao,
+    required this.iata,
+    required this.name,
+    required this.city,
+    required this.country,
+    required this.elevation,
+    required this.lat,
+    required this.lon,
+  });
+
+  String icao;
+  String iata;
+  String name;
+  String city;
+  String country;
+  int elevation;
+  double lat;
+  double lon;
+
+  factory Airport.fromData(Map<String, dynamic> data) {
+    return Airport(
+      icao: data['icao'] as String,
+      iata: data['iata'] as String,
+      name: data['name'] as String,
+      city: data['city'] as String,
+      country: data['country'] as String,
+      elevation: data['elevation'].toInt(),
+      lat: data['lat'].toDouble(),
+      lon: data['lon'].toDouble(),
+    );
+  }
+}
+
+class Connect {
+  Connect({
+    required this.url,
+    required this.auth,
+    required this.username,
+    required this.password,
+  });
+
+  final String url;
+  final bool auth;
+  final String username;
+  final String password;
 }
