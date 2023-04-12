@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'sync.dart';
+
+import 'package:web_logbook_mobile/internal/sync/sync.dart';
+import 'package:web_logbook_mobile/internal/sync/sync_flightrecords.dart';
+import 'package:web_logbook_mobile/internal/sync/sync_airports.dart';
+import 'package:web_logbook_mobile/helpers/helpers.dart';
+import 'package:web_logbook_mobile/driver/db.dart';
+import 'package:web_logbook_mobile/driver/db_airports.dart';
+import 'package:web_logbook_mobile/models/models.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -14,75 +21,23 @@ class _SettingsPageState extends State<SettingsPage> {
   final _serverAddressController = TextEditingController();
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _useAuthentication = false;
+
+  bool _useAuth = false;
   bool _isSyncing = false;
+  int airports = 0;
 
   final storage = const FlutterSecureStorage();
+
+  static const _serverAddressKey = "serverAddress";
+  static const _usernameKey = "username";
+  static const _passwordKey = "password";
+  static const _useAuthKey = "useAuth";
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
-  }
-
-  // Load settings from the secure storage since we have there
-  // login and password
-  Future<void> _loadSettings() async {
-    final serverAddress = await storage.read(key: 'serverAddress');
-    final username = await storage.read(key: 'username');
-    final password = await storage.read(key: 'password');
-    final useAuthentication = await storage.read(key: 'useAuthentication');
-
-    setState(() {
-      _serverAddressController.text = serverAddress ?? '';
-      _usernameController.text = username ?? '';
-      _passwordController.text = password ?? '';
-      _useAuthentication = useAuthentication == 'true';
-    });
-  }
-
-  // Save settings
-  Future<void> _saveSettings() async {
-    await storage.write(
-        key: 'serverAddress', value: _serverAddressController.text);
-    await storage.write(key: 'username', value: _usernameController.text);
-    await storage.write(key: 'password', value: _passwordController.text);
-    await storage.write(
-        key: 'useAuthentication', value: _useAuthentication.toString());
-  }
-
-  Future<void> _onSyncButtonPressed() async {
-    setState(() {
-      _isSyncing = true;
-    });
-
-    Sync(
-      serverAddress: _serverAddressController.text,
-      useAuthentication: _useAuthentication,
-      username: _usernameController.text,
-      password: _passwordController.text,
-    ).runSync().then((value) {
-      if (value == '') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Data synced'),
-            duration: Duration(seconds: 3),
-          ),
-        );
-      } else {
-        final error = 'Some error occured during sync: $value';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-
-      setState(() {
-        _isSyncing = false;
-      });
-    });
+    _getAirportsCount();
   }
 
   @override
@@ -122,14 +77,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 secondary: const Icon(Icons.how_to_reg),
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Use authentication'),
-                value: _useAuthentication,
+                value: _useAuth,
                 onChanged: (value) {
-                  setState(() {
-                    _useAuthentication = value!;
-                  });
+                  setState(() => _useAuth = value!);
                 },
               ),
-              if (_useAuthentication)
+              if (_useAuth)
                 Row(
                   children: [
                     Expanded(
@@ -166,6 +119,22 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                   ],
                 ),
+              const Divider(),
+              Row(
+                children: [
+                  const Icon(Icons.local_airport),
+                  const SizedBox(width: 15),
+                  Text('Airports in database: $airports'),
+                  const Spacer(),
+                  ElevatedButton(
+                    child: const Text('Update'),
+                    onPressed: () {
+                      _dowloadAirports();
+                    },
+                  )
+                ],
+              ),
+              const Divider(),
               const SizedBox(height: 40),
               Visibility(
                 visible: _isSyncing,
@@ -173,7 +142,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     CircularProgressIndicator(),
                     SizedBox(width: 20),
-                    Text('Syncing in progress...'),
+                    Text('Synchronization is in progress...'),
                   ],
                 ),
               ),
@@ -188,13 +157,7 @@ class _SettingsPageState extends State<SettingsPage> {
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   _saveSettings();
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Settings saved'),
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
+                  showInfo(context, 'Settings saved');
                 }
               },
               child: const Text('Save'),
@@ -210,5 +173,79 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ],
     );
+  }
+
+  // Load settings from the secure storage since we have there
+  // login and password
+  Future<void> _loadSettings() async {
+    final serverAddress = await storage.read(key: _serverAddressKey);
+    final username = await storage.read(key: _usernameKey);
+    final password = await storage.read(key: _passwordKey);
+    final useAuth = await storage.read(key: _useAuthKey);
+
+    setState(() {
+      _serverAddressController.text = serverAddress ?? '';
+      _usernameController.text = username ?? '';
+      _passwordController.text = password ?? '';
+      _useAuth = useAuth == 'true';
+    });
+  }
+
+  // Save settings
+  Future<void> _saveSettings() async {
+    await storage.write(
+        key: _serverAddressKey, value: _serverAddressController.text);
+    await storage.write(key: _usernameKey, value: _usernameController.text);
+    await storage.write(key: _passwordKey, value: _passwordController.text);
+    await storage.write(key: _useAuthKey, value: _useAuth.toString());
+  }
+
+  Connect get connect {
+    return Connect(
+      url: _serverAddressController.text,
+      auth: _useAuth,
+      username: _usernameController.text,
+      password: _passwordController.text,
+    );
+  }
+
+  Future<void> _onSyncButtonPressed() async {
+    setState(() => _isSyncing = true);
+
+    final error = await Sync(connect: connect).runSync();
+
+    if (!mounted) return;
+
+    if (error == null) {
+      showInfo(context, 'Data synchronized');
+    } else {
+      showInfo(context, 'Some error occured during sync: $error');
+    }
+
+    setState(() => _isSyncing = false);
+  }
+
+  Future<void> _getAirportsCount() async {
+    final count = await DBProvider.db.getAirportsCount();
+    airports = count ?? 0;
+  }
+
+  Future<void> _dowloadAirports() async {
+    setState(() => _isSyncing = true);
+
+    final res = await Sync(connect: connect).downloadAirports();
+
+    setState(() {
+      _isSyncing = false;
+      _getAirportsCount();
+    });
+
+    if (!mounted) return;
+
+    if (res == null) {
+      showInfo(context, 'Airports downloaded');
+    } else {
+      showError(context, 'Error downloading airports: $res');
+    }
   }
 }
