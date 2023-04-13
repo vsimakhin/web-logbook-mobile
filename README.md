@@ -25,10 +25,12 @@ Android is for sure, and iOS is coming.
 * List of the flight records
 * Add new or update the existing flight record
   * Double tap on the icon for the `PIC Name` field will put `Self`
-  * Double tap on any icon for the time field will copy value from `Total time`
+  * Double tap on any icon for the time field will copy the value from `Total time`
+  * Night-time calculation
 * Settings
   * Set server address
   * Define username and password in case your main application requires authorization
+  * Update airport database
 
 # Limitations
 
@@ -37,6 +39,5 @@ The app currently cannot calculate night time for the flight. So you will need t
 # ToDo
 
 - Build an app for iPhone
-- Check a nighttime calculation
 - Add some simple stats
 
