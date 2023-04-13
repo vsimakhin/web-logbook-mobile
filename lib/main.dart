@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:web_logbook_mobile/models/models.dart';
 import 'package:web_logbook_mobile/pages/flight/flight.dart';
-import 'package:web_logbook_mobile/pages/flightrecords.dart';
-import 'package:web_logbook_mobile/pages/settings.dart';
+import 'package:web_logbook_mobile/pages/flightrecords/flightrecords.dart';
+import 'package:web_logbook_mobile/pages/settings/settings.dart';
+import 'package:web_logbook_mobile/pages/stats/stats.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +29,7 @@ class _MyAppState extends State<MyApp> {
     _children = [
       const FlightRecordsPage(),
       FlightPage(flightRecord: FlightRecord(isNew: true)),
+      StatsPage(),
       const SettingsPage(),
     ];
     _currentIndex = 0;
@@ -57,6 +59,7 @@ class _MyAppState extends State<MyApp> {
         bottomNavigationBar: BottomNavigationBar(
           onTap: onTabTapped,
           currentIndex: _currentIndex,
+          useLegacyColorScheme: false,
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.connecting_airports),
@@ -65,6 +68,10 @@ class _MyAppState extends State<MyApp> {
             BottomNavigationBarItem(
               icon: Icon(Icons.flight_takeoff),
               label: 'New Flight',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.bar_chart),
+              label: 'Stats',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.settings),

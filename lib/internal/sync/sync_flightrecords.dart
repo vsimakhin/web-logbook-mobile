@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:web_logbook_mobile/models/models.dart';
 import 'package:web_logbook_mobile/driver/db.dart';
 import 'package:web_logbook_mobile/driver/db_sync.dart';
+import 'package:web_logbook_mobile/driver/db_flightrecords.dart';
 
 import 'package:web_logbook_mobile/internal/sync/sync.dart';
 
@@ -64,7 +65,8 @@ extension SyncFlightRecords on Sync {
         final json = jsonDecode(body);
 
         for (var i = 0; i < json.length; i++) {
-          await DBProvider.db.syncDeletedItems(DeletedItem.fromData(json[i]));
+          final di = DeletedItem.fromData(json[i] as Map<String, dynamic>);
+          await DBProvider.db.syncDeletedItems(di);
         }
 
         error = null;

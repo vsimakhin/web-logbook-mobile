@@ -1,4 +1,5 @@
 import 'package:web_logbook_mobile/driver/db.dart';
+import 'package:web_logbook_mobile/driver/db_flightrecords.dart';
 import 'package:web_logbook_mobile/models/models.dart';
 
 extension DBProviderSync on DBProvider {
@@ -39,5 +40,13 @@ extension DBProviderSync on DBProvider {
     final db = await database;
 
     await db?.rawDelete('''DELETE FROM deleted_items''');
+  }
+
+  /// Returns all removed items
+  Future getDeletedItems() async {
+    final db = await database;
+    return await db!.rawQuery(
+      '''SELECT uuid, table_name, delete_time FROM deleted_items''',
+    );
   }
 }
