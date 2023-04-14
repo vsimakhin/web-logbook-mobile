@@ -182,6 +182,8 @@ class _SettingsPageState extends State<SettingsPage> {
     await storage.write(key: _usernameKey, value: _usernameController.text);
     await storage.write(key: _passwordKey, value: _passwordController.text);
     await storage.write(key: _useAuthKey, value: _useAuth.toString());
+
+    setState(() {});
   }
 
   Connect get connect {
