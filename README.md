@@ -12,7 +12,8 @@ The changelog is [here](https://github.com/vsimakhin/web-logbook-mobile/blob/mai
 
 1. Download the latest release from https://github.com/vsimakhin/web-logbook-mobile/releases for your mobile OS and install it. You always can build the app yourself - check Flutter [install](https://docs.flutter.dev/get-started/install) and build instructions for [Android](https://docs.flutter.dev/deployment/android) and [iOS](https://docs.flutter.dev/deployment/ios).
 2. Check the server sync settings in the main Web Logbook application `Settings`->`Sync` and update the server address on the `Settings` page of the mobile app
-3. Run `Sync`
+3. Run `Sync` to download the flight records.
+4. Click on the `Update` button to download the airport database.
 
 ## Supported OS
 
