@@ -1,7 +1,7 @@
 name: web_logbook_mobile
 description: Web Logbook Mobile App
 publish_to: 'none'
-version: 1.1.0
+version: 1.2.0
 
 environment:
   sdk: '>=3.0.0-374.0.dev <4.0.0'
@@ -14,11 +14,11 @@ dependencies:
   uuid:
   intl:
   flutter_launcher_icons:
-  cupertino_icons: ^1.0.2
+  # cupertino_icons: ^1.0.2
   flutter_secure_storage: ^8.0.0
   http: ^0.13.5
   suntime: ^0.1.0
-  tuple: ^2.0.1
+  # tuple: ^2.0.1
   logger: ^1.3.0
 
 flutter_icons:
