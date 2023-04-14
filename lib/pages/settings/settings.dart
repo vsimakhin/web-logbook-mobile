@@ -3,11 +3,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:web_logbook_mobile/internal/sync/sync.dart';
 import 'package:web_logbook_mobile/internal/sync/sync_flightrecords.dart';
-import 'package:web_logbook_mobile/internal/sync/sync_airports.dart';
 import 'package:web_logbook_mobile/helpers/helpers.dart';
-import 'package:web_logbook_mobile/driver/db.dart';
-import 'package:web_logbook_mobile/driver/db_airports.dart';
 import 'package:web_logbook_mobile/models/models.dart';
+
+import 'package:web_logbook_mobile/pages/settings/settings_airportdb.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -24,7 +23,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   bool _useAuth = false;
   bool _isSyncing = false;
-  int airports = 0;
 
   final storage = const FlutterSecureStorage();
 
@@ -37,7 +35,6 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     _loadSettings();
-    _getAirportsCount();
   }
 
   @override
@@ -120,20 +117,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ],
                 ),
               const Divider(),
-              Row(
-                children: [
-                  const Icon(Icons.local_airport),
-                  const SizedBox(width: 15),
-                  Text('Airports in database: $airports'),
-                  const Spacer(),
-                  ElevatedButton(
-                    child: const Text('Update'),
-                    onPressed: () {
-                      _dowloadAirports();
-                    },
-                  )
-                ],
-              ),
+              AirportDB(connect: connect),
               const Divider(),
               const SizedBox(height: 40),
               Visibility(
@@ -223,29 +207,5 @@ class _SettingsPageState extends State<SettingsPage> {
     }
 
     setState(() => _isSyncing = false);
-  }
-
-  Future<void> _getAirportsCount() async {
-    final count = await DBProvider.db.getAirportsCount();
-    airports = count ?? 0;
-  }
-
-  Future<void> _dowloadAirports() async {
-    setState(() => _isSyncing = true);
-
-    final res = await Sync(connect: connect).downloadAirports();
-
-    setState(() {
-      _isSyncing = false;
-      _getAirportsCount();
-    });
-
-    if (!mounted) return;
-
-    if (res == null) {
-      showInfo(context, 'Airports downloaded');
-    } else {
-      showError(context, 'Error downloading airports: $res');
-    }
   }
 }

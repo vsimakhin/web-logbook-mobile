@@ -29,3 +29,11 @@ void showError(BuildContext context, String error) {
 int getEpochTime() {
   return DateTime.now().millisecondsSinceEpoch ~/ 1000;
 }
+
+String formatLandings(int landings) {
+  if (landings == 0) {
+    return '';
+  } else {
+    return landings.toString();
+  }
+}

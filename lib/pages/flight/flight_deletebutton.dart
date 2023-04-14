@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:web_logbook_mobile/helpers/helpers.dart';
 import 'package:web_logbook_mobile/main.dart';
 import 'package:web_logbook_mobile/driver/db.dart';
+import 'package:web_logbook_mobile/driver/db_flightrecords.dart';
 
 class DeleteFlightRecordButton extends StatelessWidget {
   const DeleteFlightRecordButton(

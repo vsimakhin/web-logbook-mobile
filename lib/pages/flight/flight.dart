@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import 'package:web_logbook_mobile/driver/db.dart';
 import 'package:web_logbook_mobile/driver/db_airports.dart';
+import 'package:web_logbook_mobile/driver/db_flightrecords.dart';
 
 import 'package:web_logbook_mobile/models/models.dart';
 import 'package:web_logbook_mobile/helpers/helpers.dart';
@@ -58,6 +58,36 @@ class _FlightPageState extends State<FlightPage> {
   String pageHeader = 'New Flight';
 
   @override
+  void dispose() {
+    // dispose all text editing controllers
+    _date.dispose();
+    _departurePlace.dispose();
+    _departureTime.dispose();
+    _arrivalPlace.dispose();
+    _arrivalTime.dispose();
+    _dayLandings.dispose();
+    _nightLandings.dispose();
+    _aircraftModel.dispose();
+    _aircraftReg.dispose();
+    _picName.dispose();
+    _timeTT.dispose();
+    _timeSE.dispose();
+    _timeME.dispose();
+    _timeMCC.dispose();
+    _timeNight.dispose();
+    _timeIFR.dispose();
+    _timePIC.dispose();
+    _timeCOP.dispose();
+    _timeDual.dispose();
+    _timeInstr.dispose();
+    _simType.dispose();
+    _simTime.dispose();
+    _remarks.dispose();
+
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
     flightRecord = widget.flightRecord;
@@ -75,16 +105,8 @@ class _FlightPageState extends State<FlightPage> {
       _timeME.text = flightRecord.timeME;
       _timeMCC.text = flightRecord.timeMCC;
       _timeTT.text = flightRecord.timeTT;
-      if (flightRecord.dayLandings == 0) {
-        _dayLandings.text = '';
-      } else {
-        _dayLandings.text = flightRecord.dayLandings.toString();
-      }
-      if (flightRecord.nightLandings == 0) {
-        _nightLandings.text = '';
-      } else {
-        _nightLandings.text = flightRecord.nightLandings.toString();
-      }
+      _dayLandings.text = formatLandings(flightRecord.dayLandings);
+      _nightLandings.text = formatLandings(flightRecord.dayLandings);
       _timeNight.text = flightRecord.timeNight;
       _timeIFR.text = flightRecord.timeIFR;
       _timePIC.text = flightRecord.timePIC;
