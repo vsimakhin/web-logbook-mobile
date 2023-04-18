@@ -14,7 +14,9 @@ class LandingField extends StatelessWidget {
         controller: ctrl,
         decoration: InputDecoration(
           labelText: name,
-          icon: const Icon(Icons.sunny),
+          icon: name.contains('Day')
+              ? const Icon(Icons.sunny)
+              : const Icon(Icons.nightlight),
         ),
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),

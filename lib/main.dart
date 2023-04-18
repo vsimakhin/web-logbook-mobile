@@ -28,8 +28,8 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _children = [
       const FlightRecordsPage(),
-      FlightPage(flightRecord: FlightRecord(isNew: true)),
-      StatsPage(),
+      FlightPage(fr: FlightRecord(isNew: true)),
+      const StatsPage(),
       const SettingsPage(),
     ];
     _currentIndex = 0;

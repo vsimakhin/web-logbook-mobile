@@ -17,9 +17,9 @@ import 'package:web_logbook_mobile/pages/flight/flight_place.dart';
 import 'package:web_logbook_mobile/pages/flight/flight_aircraft.dart';
 
 class FlightPage extends StatefulWidget {
-  const FlightPage({Key? key, required this.flightRecord}) : super(key: key);
+  const FlightPage({Key? key, required this.fr}) : super(key: key);
 
-  final FlightRecord flightRecord;
+  final FlightRecord fr;
 
   @override
   State<FlightPage> createState() => _FlightPageState();
@@ -28,7 +28,7 @@ class FlightPage extends StatefulWidget {
 class _FlightPageState extends State<FlightPage> {
   _FlightPageState();
 
-  late FlightRecord flightRecord;
+  late FlightRecord fr;
 
   final _formKey = GlobalKey<FormState>();
   final _date = TextEditingController();
@@ -90,36 +90,43 @@ class _FlightPageState extends State<FlightPage> {
   @override
   void initState() {
     super.initState();
-    flightRecord = widget.flightRecord;
+    fr = widget.fr;
 
-    if (!flightRecord.isNew) {
+    if (!fr.isNew) {
       // existing flight record
-      _date.text = flightRecord.date;
-      _departurePlace.text = flightRecord.departurePlace;
-      _departureTime.text = flightRecord.departureTime;
-      _arrivalPlace.text = flightRecord.arrivalPlace;
-      _arrivalTime.text = flightRecord.arrivalTime;
-      _aircraftModel.text = flightRecord.aircraftModel;
-      _aircraftReg.text = flightRecord.aircraftReg;
-      _timeSE.text = flightRecord.timeSE;
-      _timeME.text = flightRecord.timeME;
-      _timeMCC.text = flightRecord.timeMCC;
-      _timeTT.text = flightRecord.timeTT;
-      _dayLandings.text = formatLandings(flightRecord.dayLandings);
-      _nightLandings.text = formatLandings(flightRecord.dayLandings);
-      _timeNight.text = flightRecord.timeNight;
-      _timeIFR.text = flightRecord.timeIFR;
-      _timePIC.text = flightRecord.timePIC;
-      _timeCOP.text = flightRecord.timeCOP;
-      _timeDual.text = flightRecord.timeDual;
-      _timeInstr.text = flightRecord.timeInstr;
-      _simType.text = flightRecord.simType;
-      _simTime.text = flightRecord.simTime;
-      _picName.text = flightRecord.picName;
-      _remarks.text = flightRecord.remarks;
+      _date.text = fr.date;
+      _departurePlace.text = fr.departurePlace;
+      _departureTime.text = fr.departureTime;
+      _arrivalPlace.text = fr.arrivalPlace;
+      _arrivalTime.text = fr.arrivalTime;
+      _aircraftModel.text = fr.aircraftModel;
+      _aircraftReg.text = fr.aircraftReg;
+      _timeSE.text = fr.timeSE;
+      _timeME.text = fr.timeME;
+      _timeMCC.text = fr.timeMCC;
+      _timeTT.text = fr.timeTT;
+      _dayLandings.text = formatLandings(fr.dayLandings);
+      _nightLandings.text = formatLandings(fr.dayLandings);
+      _timeNight.text = fr.timeNight;
+      _timeIFR.text = fr.timeIFR;
+      _timePIC.text = fr.timePIC;
+      _timeCOP.text = fr.timeCOP;
+      _timeDual.text = fr.timeDual;
+      _timeInstr.text = fr.timeInstr;
+      _simType.text = fr.simType;
+      _simTime.text = fr.simTime;
+      _picName.text = fr.picName;
+      _remarks.text = fr.remarks;
 
-      pageHeader =
-          "Flight ${flightRecord.departurePlace} - ${flightRecord.arrivalPlace}";
+      if (fr.departurePlace != '' && fr.arrivalPlace != '') {
+        pageHeader = "Flight ${fr.departurePlace} - ${fr.arrivalPlace}";
+      } else if (fr.aircraftModel != '' && fr.aircraftReg != '') {
+        pageHeader = "Flight ${fr.aircraftModel} ${fr.aircraftReg}";
+      } else if (fr.simType != '') {
+        pageHeader = "Flight record ${fr.simType}";
+      } else {
+        pageHeader = "Flight record";
+      }
     } else {
       _date.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
     }
@@ -249,11 +256,10 @@ class _FlightPageState extends State<FlightPage> {
             ),
             const Spacer(),
             Visibility(
-              visible: !flightRecord.isNew,
+              visible: !fr.isNew,
               child: DeleteFlightRecordButton(
-                uuid: flightRecord.uuid,
-                flightRecordName:
-                    '${_departurePlace.text} - ${_arrivalPlace.text}',
+                uuid: fr.uuid,
+                frName: '${_departurePlace.text} - ${_arrivalPlace.text}',
               ),
             )
           ],
@@ -264,35 +270,35 @@ class _FlightPageState extends State<FlightPage> {
 
   // Runs when Save button pressed
   void _onSaveButtonPressed() {
-    flightRecord.date = _date.text;
-    flightRecord.departurePlace = _departurePlace.text;
-    flightRecord.departureTime = _departureTime.text;
-    flightRecord.arrivalPlace = _arrivalPlace.text;
-    flightRecord.arrivalTime = _arrivalTime.text;
-    flightRecord.aircraftModel = _aircraftModel.text;
-    flightRecord.aircraftReg = _aircraftReg.text;
-    flightRecord.timeSE = _timeSE.text;
-    flightRecord.timeME = _timeME.text;
-    flightRecord.timeMCC = _timeMCC.text;
-    flightRecord.timeTT = _timeTT.text;
-    flightRecord.dayLandings = int.tryParse(_dayLandings.text) ?? 0;
-    flightRecord.nightLandings = int.tryParse(_nightLandings.text) ?? 0;
-    flightRecord.timeNight = _timeNight.text;
-    flightRecord.timeIFR = _timeIFR.text;
-    flightRecord.timePIC = _timePIC.text;
-    flightRecord.timeCOP = _timeCOP.text;
-    flightRecord.timeDual = _timeDual.text;
-    flightRecord.timeInstr = _timeInstr.text;
-    flightRecord.simType = _simType.text;
-    flightRecord.simTime = _simTime.text;
-    flightRecord.picName = _picName.text;
-    flightRecord.remarks = _remarks.text;
+    fr.date = _date.text;
+    fr.departurePlace = _departurePlace.text;
+    fr.departureTime = _departureTime.text;
+    fr.arrivalPlace = _arrivalPlace.text;
+    fr.arrivalTime = _arrivalTime.text;
+    fr.aircraftModel = _aircraftModel.text;
+    fr.aircraftReg = _aircraftReg.text;
+    fr.timeSE = _timeSE.text;
+    fr.timeME = _timeME.text;
+    fr.timeMCC = _timeMCC.text;
+    fr.timeTT = _timeTT.text;
+    fr.dayLandings = int.tryParse(_dayLandings.text) ?? 0;
+    fr.nightLandings = int.tryParse(_nightLandings.text) ?? 0;
+    fr.timeNight = _timeNight.text;
+    fr.timeIFR = _timeIFR.text;
+    fr.timePIC = _timePIC.text;
+    fr.timeCOP = _timeCOP.text;
+    fr.timeDual = _timeDual.text;
+    fr.timeInstr = _timeInstr.text;
+    fr.simType = _simType.text;
+    fr.simTime = _simTime.text;
+    fr.picName = _picName.text;
+    fr.remarks = _remarks.text;
 
     // insert or update the flight record
-    DBProvider.db.saveFlightRecord(flightRecord);
+    DBProvider.db.saveFlightRecord(fr);
 
     late String info;
-    if (flightRecord.isNew) {
+    if (fr.isNew) {
       // in case the flight record was new, let's pretend there
       // will be another one, so we can change departure vs arrival
       // and keep the same aircraft
