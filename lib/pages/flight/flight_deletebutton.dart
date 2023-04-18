@@ -6,9 +6,9 @@ import 'package:web_logbook_mobile/driver/db_flightrecords.dart';
 
 class DeleteFlightRecordButton extends StatelessWidget {
   const DeleteFlightRecordButton(
-      {super.key, required this.uuid, required this.flightRecordName});
+      {super.key, required this.uuid, required this.frName});
 
-  final String flightRecordName;
+  final String frName;
   final String uuid;
 
   @override
@@ -18,7 +18,7 @@ class DeleteFlightRecordButton extends StatelessWidget {
         context: context,
         builder: (BuildContext context) => AlertDialog(
           title: const Text('Delete Flight Record?'),
-          content: Text('Delete Flight Record $flightRecordName?'),
+          content: Text('Delete Flight Record $frName?'),
           actions: <Widget>[
             TextButton(
               child: const Text('Yes, delete.'),

@@ -164,7 +164,7 @@ class _FlightRecordsSource extends DataTableSource {
         Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => FlightPage(flightRecord: fr),
+              builder: (context) => FlightPage(fr: fr),
             )).then((value) {
           if (value != null) {
             if (value) {
