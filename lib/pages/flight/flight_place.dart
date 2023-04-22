@@ -46,9 +46,13 @@ class FlightPlace extends StatelessWidget {
             ],
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.next,
-            onChanged: (value) {
-              calculateTotalTime();
-              calculateNightTime();
+            onChanged: (value) async {
+              Future(() {
+                calculateTotalTime();
+              });
+              Future(() {
+                calculateNightTime();
+              });
             },
           ),
         )

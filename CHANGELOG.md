@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.3.0] - 19.04.2023
+
+- Update: A new algorithm for a night-time calculation. The previous one had a few limitations, such as it couldn't correctly calculate the time if the flight started before sunset and ended after sunrise. Or there was quite a high error if the flight was close to the North or South poles. The new algorithm divides the flight for the segments <5 minutes and checks the sunrise/sunset time for each of them, and then summarises the total night time.
+
 ## [1.2.2] - 18.04.2023
 
 - Update: slightly improved user interface for the flight records

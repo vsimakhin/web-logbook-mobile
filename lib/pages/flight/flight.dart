@@ -340,7 +340,7 @@ class _FlightPageState extends State<FlightPage> {
   }
 
   /// The function calculates a total flight time
-  void _calculateTotalTime() {
+  Future<void> _calculateTotalTime() async {
     final start = _departureTime.text;
     final end = _arrivalTime.text;
 
@@ -369,7 +369,7 @@ class _FlightPageState extends State<FlightPage> {
     }
   }
 
-  void _calculateNightTime() async {
+  Future<void> _calculateNightTime() async {
     List<Map<String, Object?>> res;
     late Airport departureAirport;
     late Airport arrivalAirport;
@@ -419,11 +419,18 @@ class _FlightPageState extends State<FlightPage> {
         night.Place(departureAirport.lat, departureAirport.lon, departureTime),
         night.Place(arrivalAirport.lat, arrivalAirport.lon, arrivalTime),
       );
-      final nightTime = route.nightTime();
-      final hh = (nightTime.inHours).toString().padLeft(2, '0');
-      final mm = (nightTime.inMinutes % 60).toString().padLeft(2, '0');
-      //remove first 0 if it's there
-      _timeNight.text = '$hh:$mm'.replaceFirst('0', '');
+
+      final nightTime = await route.nightTime();
+
+      if (nightTime.inMinutes != 0) {
+        final hh = (nightTime.inHours).toString().padLeft(2, '0');
+        final mm = (nightTime.inMinutes % 60).toString().padLeft(2, '0');
+
+        //remove first 0 if it's there
+        _timeNight.text = '$hh:$mm'.replaceFirst('0', '');
+      } else {
+        _timeNight.text = '';
+      }
     }
   }
 }

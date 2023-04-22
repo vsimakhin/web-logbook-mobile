@@ -39,82 +39,50 @@ class Route {
     return routeDistance() / (flightTime().inSeconds / 3600);
   }
 
-  Place meetWithSun(String target) {
-    const maxIterations = 20;
-    const maxDiffSeconds = 30;
+  Future<Duration> nightTime() async {
+    final speedPerMinute = flightSpeed() / 60;
 
-    int iter = 0;
-    Duration diff = const Duration(seconds: 0);
+    // assumed we split the route for 5 minutes segments (60 / 5)
+    final maxDistanse = flightSpeed() / 12;
 
-    Place xPoint = midpoint(departure, arrival);
-    Place startPoint;
-    Place endPoint;
-
-    double dist;
-    double flightTime;
-
-    startPoint = departure;
-    endPoint = arrival;
-
-    final speed = flightSpeed();
-
-    while (iter < maxIterations) {
-      iter++;
-
-      xPoint = midpoint(startPoint, endPoint);
-
-      dist = distance(departure, xPoint);
-      flightTime = dist / speed * 60;
-
-      xPoint.time = departure.time.add(Duration(minutes: flightTime.round()));
-
-      if (target == "sunrise") {
-        diff = xPoint.time.difference(xPoint.sunrise());
-      } else {
-        diff = xPoint.time.difference(xPoint.sunset());
-      }
-
-      if (diff.inSeconds.abs() > maxDiffSeconds) {
-        if (diff.inSeconds > 0) {
-          endPoint = xPoint;
-        } else {
-          startPoint = xPoint;
-        }
-      } else {
-        break;
-      }
-    }
-
-    return xPoint;
+    return nightSegment(departure, arrival, maxDistanse, speedPerMinute);
   }
+}
 
-  Duration nightTime() {
-    Duration nightTime = const Duration(minutes: 0);
+Duration nightSegment(
+  Place start,
+  Place end,
+  double maxDistance,
+  double speedPerMinute,
+) {
+  Duration d = const Duration(minutes: 0);
 
-    DateTime rdsr = departure.sunrise();
-    DateTime rdss = departure.sunset();
-    DateTime rasr = arrival.sunrise();
-    DateTime rass = arrival.sunset();
+  final dist = distance(start, end);
+  if (dist > maxDistance) {
+    // too long, let's split it again
+    Place mid = midpoint(start, end);
+    // calculate time at the mid point
+    // dist / 2 * 60000 / speedPerMinute
+    final flightTime = dist * 30000 / speedPerMinute;
+    mid.time = start.time.add(Duration(milliseconds: (flightTime).round()));
 
-    if ((departure.time.isAfter(rdsr) && departure.time.isBefore(rdss)) &&
-        (arrival.time.isAfter(rasr) && arrival.time.isBefore(rass))) {
-      // full day flight
-      nightTime = const Duration(minutes: 0);
-    } else if (departure.time.isAfter(rdsr) && departure.time.isBefore(rdss)) {
-      // flight from day to night, night landing
-      final point = meetWithSun("sunset");
-      nightTime = arrival.time.difference(point.time);
-    } else if (arrival.time.isAfter(rasr) && arrival.time.isBefore(rass)) {
-      // flight from night to day, day landing
-      final point = meetWithSun("sunrise");
-      nightTime = point.time.difference(departure.time);
+    d = nightSegment(start, mid, maxDistance, speedPerMinute) +
+        nightSegment(mid, end, maxDistance, speedPerMinute);
+  } else {
+    // get sunrise and sunset for the end point
+    // it could be calculated for the middle point again to be more precise,
+    // but it will add few more calculations and the error is not so high
+    final sr = end.sunrise();
+    final ss = end.sunset();
+
+    if (end.time.isAfter(sr) && end.time.isBefore(ss)) {
+      d = const Duration(minutes: 0);
     } else {
-      // full night time
-      nightTime = flightTime();
+      d = Duration(milliseconds: (dist / speedPerMinute * 60000).ceil());
     }
-
-    return nightTime;
   }
+
+  return d;
 }
 
 double deg2rad(double degrees) {
