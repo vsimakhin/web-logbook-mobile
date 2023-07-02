@@ -138,13 +138,13 @@ class DeletedItem {
 
   String uuid;
   String tableName;
-  int deleteTime;
+  String deleteTime;
 
   factory DeletedItem.fromData(Map<String, dynamic> data) {
     return DeletedItem(
       uuid: data['uuid'] as String,
       tableName: data['table_name'] as String,
-      deleteTime: data['delete_time'] as int,
+      deleteTime: data['delete_time'] as String,
     );
   }
 

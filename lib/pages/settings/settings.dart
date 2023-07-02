@@ -3,10 +3,13 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'package:web_logbook_mobile/internal/sync/sync.dart';
 import 'package:web_logbook_mobile/internal/sync/sync_flightrecords.dart';
+import 'package:web_logbook_mobile/internal/sync/sync_airports.dart';
+
 import 'package:web_logbook_mobile/helpers/helpers.dart';
 import 'package:web_logbook_mobile/models/models.dart';
-
-import 'package:web_logbook_mobile/pages/settings/settings_airportdb.dart';
+import 'package:web_logbook_mobile/driver/db.dart';
+import 'package:web_logbook_mobile/driver/db_airports.dart';
+import 'package:web_logbook_mobile/driver/db_flightrecords.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({Key? key}) : super(key: key);
@@ -21,6 +24,8 @@ class _SettingsPageState extends State<SettingsPage> {
   final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  int _airports = 0;
+  int _flightRecords = 0;
   bool _useAuth = false;
   bool _isSyncing = false;
 
@@ -35,6 +40,8 @@ class _SettingsPageState extends State<SettingsPage> {
   void initState() {
     super.initState();
     _loadSettings();
+    _getAirportsCount();
+    _getFlightRecordsCount();
   }
 
   @override
@@ -42,11 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Row(
-          children: [
-            Icon(Icons.settings),
-            SizedBox(width: 10),
-            Text('Settings'),
-          ],
+          children: [Icon(Icons.settings), SizedBox(width: 10), Text('Settings')],
         ),
       ),
       body: Padding(
@@ -55,21 +58,13 @@ class _SettingsPageState extends State<SettingsPage> {
           key: _formKey,
           child: Column(
             children: [
+              // server address
               TextFormField(
                 controller: _serverAddressController,
-                decoration: const InputDecoration(
-                  labelText: 'Server address',
-                  icon: Icon(
-                    Icons.computer,
-                  ),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter Server address';
-                  }
-                  return null;
-                },
+                decoration: const InputDecoration(labelText: 'Server address', icon: Icon(Icons.computer)),
+                validator: _serverAddressValidator,
               ),
+              // either use authentication or not
               CheckboxListTile(
                 secondary: const Icon(Icons.how_to_reg),
                 contentPadding: EdgeInsets.zero,
@@ -85,16 +80,8 @@ class _SettingsPageState extends State<SettingsPage> {
                     Expanded(
                       child: TextFormField(
                         controller: _usernameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Username',
-                          icon: Icon(Icons.person),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter username';
-                          }
-                          return null;
-                        },
+                        decoration: const InputDecoration(labelText: 'Username', icon: Icon(Icons.person)),
+                        validator: _usernameValidator,
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -102,22 +89,45 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: TextFormField(
                         controller: _passwordController,
                         obscureText: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Password',
-                          icon: Icon(Icons.password),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter password';
-                          }
-                          return null;
-                        },
+                        decoration: const InputDecoration(labelText: 'Password', icon: Icon(Icons.password)),
+                        validator: _passwordValidator,
                       ),
                     ),
                   ],
                 ),
               const Divider(),
-              AirportDB(connect: connect),
+              // Flight records
+              Row(
+                children: [
+                  const Icon(Icons.connecting_airports),
+                  const SizedBox(width: 15),
+                  Text('Flight records: $_flightRecords'),
+                  const Spacer(),
+                  ElevatedButton(
+                    child: const Text('Update'),
+                    onPressed: () {
+                      if (_isSyncing) return;
+                      _syncFlightRecords();
+                    },
+                  )
+                ],
+              ),
+              // Airport DB
+              Row(
+                children: [
+                  const Icon(Icons.local_airport),
+                  const SizedBox(width: 15),
+                  Text('Airports: $_airports'),
+                  const Spacer(),
+                  ElevatedButton(
+                    child: const Text('Update'),
+                    onPressed: () {
+                      if (_isSyncing) return;
+                      _dowloadAirports();
+                    },
+                  )
+                ],
+              ),
               const Divider(),
               const SizedBox(height: 40),
               Visibility(
@@ -138,21 +148,15 @@ class _SettingsPageState extends State<SettingsPage> {
         Row(
           children: [
             ElevatedButton(
+              child: const Text('Save'),
               onPressed: () {
                 if (_formKey.currentState!.validate()) {
                   _saveSettings();
                   showInfo(context, 'Settings saved');
                 }
               },
-              child: const Text('Save'),
             ),
             const Spacer(),
-            ElevatedButton(
-              child: const Text('Sync'),
-              onPressed: () {
-                _onSyncButtonPressed();
-              },
-            ),
           ],
         ),
       ],
@@ -177,8 +181,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
   // Save settings
   Future<void> _saveSettings() async {
-    await storage.write(
-        key: _serverAddressKey, value: _serverAddressController.text);
+    await storage.write(key: _serverAddressKey, value: _serverAddressController.text);
     await storage.write(key: _usernameKey, value: _usernameController.text);
     await storage.write(key: _passwordKey, value: _passwordController.text);
     await storage.write(key: _useAuthKey, value: _useAuth.toString());
@@ -195,19 +198,79 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _onSyncButtonPressed() async {
+  Future<void> _getAirportsCount() async {
+    final count = await DBProvider.db.getAirportsCount();
+    setState(() {
+      _airports = count ?? 0;
+    });
+  }
+
+  Future<void> _getFlightRecordsCount() async {
+    final count = await DBProvider.db.getFlightRecordsCount();
+    setState(() {
+      _flightRecords = count ?? 0;
+    });
+  }
+
+  Future<void> _dowloadAirports() async {
     setState(() => _isSyncing = true);
 
-    final error = await Sync(connect: connect).runSync();
+    final res = await Sync(connect: connect).downloadAirports();
+
+    setState(() {
+      _isSyncing = false;
+    });
+    _getAirportsCount();
 
     if (!mounted) return;
 
-    if (error == null) {
-      showInfo(context, 'Data synchronized');
+    if (res == null) {
+      showInfo(context, 'Airport DB downloaded');
     } else {
-      showInfo(context, 'Some error occured during sync: $error');
+      showError(context, 'Error downloading Airport DB: $res');
     }
+  }
 
-    setState(() => _isSyncing = false);
+  Future<void> _syncFlightRecords() async {
+    setState(() => _isSyncing = true);
+
+    final res = await Sync(connect: connect).syncFlightRecords();
+
+    setState(() {
+      _isSyncing = false;
+    });
+    _getFlightRecordsCount();
+
+    if (!mounted) return;
+
+    if (res == null) {
+      showInfo(context, 'Flight records updated');
+    } else {
+      showError(context, 'Error updating flight records: $res');
+    }
+  }
+
+  // server address validator
+  String? _serverAddressValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter Server address';
+    }
+    return null;
+  }
+
+  // username validator
+  String? _usernameValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter username';
+    }
+    return null;
+  }
+
+  // password validator
+  String? _passwordValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Please enter password';
+    }
+    return null;
   }
 }

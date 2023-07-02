@@ -24,7 +24,7 @@ extension DBProviderSync on DBProvider {
 
   /// Deletes the item with the given UUID from the corresponding table
   /// in the database.
-  Future syncDeletedItems(DeletedItem di) async {
+  Future processDeletedItems(DeletedItem di) async {
     final db = await database;
 
     await db?.rawDelete(
