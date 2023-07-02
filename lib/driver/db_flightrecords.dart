@@ -1,7 +1,6 @@
 import 'package:uuid/uuid.dart';
-
+import 'package:sqflite/sqflite.dart';
 import 'package:web_logbook_mobile/helpers/helpers.dart';
-
 import 'package:web_logbook_mobile/driver/db.dart';
 import 'package:web_logbook_mobile/models/models.dart';
 
@@ -11,6 +10,15 @@ extension DBProviderFlightRecords on DBProvider {
     final db = await database;
     return await db!.rawQuery(
       '''SELECT * FROM logbook_view ORDER BY m_date DESC''',
+    );
+  }
+
+  Future<int?> getFlightRecordsCount() async {
+    final db = await database;
+    return Sqflite.firstIntValue(
+      await db!.rawQuery(
+        '''SELECT COUNT(*) FROM logbook_view''',
+      ),
     );
   }
 

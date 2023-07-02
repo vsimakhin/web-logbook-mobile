@@ -17,11 +17,14 @@ void showError(BuildContext context, String error) {
   var logger = Logger();
   logger.e(error);
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
+  showDialog<String>(
+    context: context,
+    builder: (BuildContext context) => AlertDialog(
+      title: const Text('Something wrong'),
       content: Text(error),
-      duration: const Duration(seconds: 2),
-      backgroundColor: Theme.of(context).colorScheme.error,
+      actions: <Widget>[
+        TextButton(child: const Text('Well, ok then...'), onPressed: () => Navigator.pop(context)),
+      ],
     ),
   );
 }
