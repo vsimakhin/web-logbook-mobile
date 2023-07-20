@@ -62,7 +62,7 @@ class _SettingsPageState extends State<SettingsPage> {
               TextFormField(
                 controller: _serverAddressController,
                 decoration: const InputDecoration(labelText: 'Server address', icon: Icon(Icons.computer)),
-                validator: _serverAddressValidator,
+                validator: (value) => _fieldValidator(value, "server address"),
               ),
               // either use authentication or not
               CheckboxListTile(
@@ -81,7 +81,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       child: TextFormField(
                         controller: _usernameController,
                         decoration: const InputDecoration(labelText: 'Username', icon: Icon(Icons.person)),
-                        validator: _usernameValidator,
+                        validator: (value) => _fieldValidator(value, "username"),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -90,7 +90,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         controller: _passwordController,
                         obscureText: true,
                         decoration: const InputDecoration(labelText: 'Password', icon: Icon(Icons.password)),
-                        validator: _passwordValidator,
+                        validator: (value) => _fieldValidator(value, "password"),
                       ),
                     ),
                   ],
@@ -250,26 +250,10 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  // server address validator
-  String? _serverAddressValidator(String? value) {
+  // field validator
+  String? _fieldValidator(String? value, String? msg) {
     if (value == null || value.isEmpty) {
-      return 'Please enter Server address';
-    }
-    return null;
-  }
-
-  // username validator
-  String? _usernameValidator(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter username';
-    }
-    return null;
-  }
-
-  // password validator
-  String? _passwordValidator(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter password';
+      return 'Please enter $msg';
     }
     return null;
   }

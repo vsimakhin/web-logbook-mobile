@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:web_logbook_mobile/models/models.dart';
-
 import 'package:web_logbook_mobile/driver/db.dart';
 import 'package:web_logbook_mobile/driver/db_flightrecords.dart';
-
 import 'package:web_logbook_mobile/pages/flight/flight.dart';
 
 class FlightRecordsPage extends StatefulWidget {
@@ -62,18 +60,13 @@ class _FlightRecordsPageState extends State<FlightRecordsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Row(
-          children: [
-            Icon(Icons.connecting_airports),
-            SizedBox(width: 10),
-            Text('Flight Records'),
-          ],
+          children: [Icon(Icons.connecting_airports), SizedBox(width: 10), Text('Flight Records')],
         ),
       ),
       body: LayoutBuilder(builder: (context, constraints) {
         wideScreen = (constraints.maxWidth > 400);
 
-        final int rowsPerPage =
-            (constraints.maxHeight - headingRowH - 70) ~/ dataRowH + 1;
+        final int rowsPerPage = (constraints.maxHeight - headingRowH - 70) ~/ dataRowH + 1;
 
         if (_dataList.isNotEmpty) {
           return SingleChildScrollView(
@@ -161,11 +154,7 @@ class _FlightRecordsSource extends DataTableSource {
     return DataRow(
       cells: cells,
       onSelectChanged: (_) {
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => FlightPage(fr: fr),
-            )).then((value) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => FlightPage(fr: fr))).then((value) {
           if (value != null) {
             if (value) {
               callback();
