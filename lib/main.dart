@@ -35,12 +35,6 @@ class _MyAppState extends State<MyApp> {
     _currentIndex = 0;
   }
 
-  void onTabTapped(int index) {
-    setState(() {
-      _currentIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -48,38 +42,44 @@ class _MyAppState extends State<MyApp> {
       themeMode: ThemeMode.system,
       theme: ThemeData(
         brightness: Brightness.light,
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
       darkTheme: ThemeData(
         brightness: Brightness.dark,
-        useMaterial3: true,
       ),
       home: Scaffold(
         body: _children[_currentIndex],
         bottomNavigationBar: BottomNavigationBar(
-          onTap: onTabTapped,
+          onTap: _onTabTapped,
           currentIndex: _currentIndex,
           useLegacyColorScheme: false,
+          selectedItemColor: Colors.grey,
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.connecting_airports),
+              icon: Icon(Icons.connecting_airports, color: Colors.grey),
               label: 'Flights',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.flight_takeoff),
+              icon: Icon(Icons.flight_takeoff, color: Colors.grey),
               label: 'New Flight',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart),
+              icon: Icon(Icons.bar_chart, color: Colors.grey),
               label: 'Stats',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.settings),
+              icon: Icon(Icons.settings, color: Colors.grey),
               label: 'Settings',
             )
           ],
         ),
       ),
     );
+  }
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
   }
 }
