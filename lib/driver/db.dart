@@ -25,17 +25,20 @@ class DBProvider {
 
     final database = await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (Database db, int version) async {
         await db.execute(tableLogbook);
         await db.execute(viewLogbook);
         await db.execute(deletedItems);
         await db.execute(airportTable);
+        await db.execute(attachmentTable);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         switch (oldVersion) {
           case 1:
             await db.execute(airportTable);
+          case 2:
+            await db.execute(attachmentTable);
         }
       },
       onOpen: (db) async {},

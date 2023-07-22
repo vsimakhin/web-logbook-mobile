@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:web_logbook_mobile/models/models.dart';
 import 'package:web_logbook_mobile/pages/flight/flight.dart';
 import 'package:web_logbook_mobile/pages/flightrecords/flightrecords.dart';
@@ -56,20 +55,20 @@ class _MyAppState extends State<MyApp> {
           selectedItemColor: Colors.grey,
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.connecting_airports, color: Colors.grey),
               label: 'Flights',
+              icon: Icon(Icons.connecting_airports, color: Colors.grey),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.flight_takeoff, color: Colors.grey),
               label: 'New Flight',
+              icon: Icon(Icons.flight_takeoff, color: Colors.grey),
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart, color: Colors.grey),
               label: 'Stats',
+              icon: Icon(Icons.bar_chart, color: Colors.grey),
             ),
             BottomNavigationBarItem(
+              label: 'Settings & Sync',
               icon: Icon(Icons.settings, color: Colors.grey),
-              label: 'Settings',
             )
           ],
         ),

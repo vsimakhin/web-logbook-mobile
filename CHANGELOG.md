@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unrelease]
+
+- New: Added attachments for the flight records.
+
 ## [1.4.0] - 20.07.2023
 
 - Update: Redesign a synchronization process with the main app.

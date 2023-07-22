@@ -6,10 +6,7 @@ void showInfo(BuildContext context, String info) {
   logger.i(info);
 
   ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(info),
-      duration: const Duration(seconds: 2),
-    ),
+    SnackBar(content: Text(info), duration: const Duration(seconds: 2)),
   );
 }
 
@@ -17,12 +14,12 @@ void showError(BuildContext context, String error) {
   var logger = Logger();
   logger.e(error);
 
-  showDialog<String>(
+  showDialog(
     context: context,
     builder: (BuildContext context) => AlertDialog(
       title: const Text('Something wrong'),
       content: Text(error),
-      actions: <Widget>[
+      actions: [
         TextButton(child: const Text('Well, ok then...'), onPressed: () => Navigator.pop(context)),
       ],
     ),

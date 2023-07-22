@@ -9,7 +9,7 @@ class Aircraft extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: <Widget>[
+      children: [
         Expanded(
           child: TextFormField(
             controller: ctrlModel,

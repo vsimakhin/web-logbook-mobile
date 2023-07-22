@@ -49,7 +49,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Row(
-          children: [Icon(Icons.settings), SizedBox(width: 10), Text('Settings')],
+          children: [Icon(Icons.settings), SizedBox(width: 10), Text('Settings & Synchronization')],
         ),
       ),
       body: Padding(
@@ -214,12 +214,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _dowloadAirports() async {
     setState(() => _isSyncing = true);
-
     final res = await Sync(connect: connect).downloadAirports();
+    setState(() => _isSyncing = false);
 
-    setState(() {
-      _isSyncing = false;
-    });
     _getAirportsCount();
 
     if (!mounted) return;
@@ -233,12 +230,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _syncFlightRecords() async {
     setState(() => _isSyncing = true);
-
     final res = await Sync(connect: connect).syncFlightRecords();
+    setState(() => _isSyncing = false);
 
-    setState(() {
-      _isSyncing = false;
-    });
     _getFlightRecordsCount();
 
     if (!mounted) return;

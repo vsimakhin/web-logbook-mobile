@@ -67,3 +67,12 @@ const airportTable = '''
   CREATE UNIQUE INDEX IF NOT EXISTS airports_icao ON airports(icao);
   CREATE INDEX IF NOT EXISTS airports_iata ON airports(iata);
 ''';
+
+const attachmentTable = '''
+  CREATE TABLE IF NOT EXISTS attachments (
+      uuid TEXT PRIMARY_KEY,
+      record_id TEXT,
+      document_name TEXT,
+      document BLOB
+  );
+''';

@@ -1,8 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:open_file_plus/open_file_plus.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:uuid/uuid.dart';
 
 import 'package:web_logbook_mobile/driver/db.dart';
 import 'package:web_logbook_mobile/driver/db_airports.dart';
+import 'package:web_logbook_mobile/driver/db_attachments.dart';
 import 'package:web_logbook_mobile/driver/db_flightrecords.dart';
 
 import 'package:web_logbook_mobile/models/models.dart';
@@ -27,6 +34,8 @@ class FlightPage extends StatefulWidget {
 
 class _FlightPageState extends State<FlightPage> {
   _FlightPageState();
+
+  late List<Attachment> _attachments = [];
 
   late FlightRecord fr;
 
@@ -106,7 +115,7 @@ class _FlightPageState extends State<FlightPage> {
       _timeMCC.text = fr.timeMCC;
       _timeTT.text = fr.timeTT;
       _dayLandings.text = formatLandings(fr.dayLandings);
-      _nightLandings.text = formatLandings(fr.dayLandings);
+      _nightLandings.text = formatLandings(fr.nightLandings);
       _timeNight.text = fr.timeNight;
       _timeIFR.text = fr.timeIFR;
       _timePIC.text = fr.timePIC;
@@ -127,6 +136,9 @@ class _FlightPageState extends State<FlightPage> {
       } else {
         pageHeader = "Flight record";
       }
+
+      // load attachments
+      _loadAttachment();
     } else {
       _date.text = DateFormat('dd/MM/yyyy').format(DateTime.now());
     }
@@ -144,102 +156,158 @@ class _FlightPageState extends State<FlightPage> {
           ],
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+      body: Form(
+        key: _formKey,
+        child: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: PageView(
+            children: [
+              SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    DateField(ctrl: _date),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _picName,
-                        decoration: InputDecoration(
-                          labelText: 'Pilot In Command',
-                          icon: GestureDetector(
-                            child: const Icon(Icons.person),
-                            onDoubleTap: () => _picName.text = 'Self',
+                    Row(
+                      children: [
+                        DateField(ctrl: _date),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _picName,
+                            decoration: InputDecoration(
+                              labelText: 'Pilot In Command',
+                              icon: GestureDetector(
+                                child: const Icon(Icons.person),
+                                onDoubleTap: () => _picName.text = 'Self',
+                              ),
+                            ),
+                            textInputAction: TextInputAction.next,
                           ),
                         ),
-                        textInputAction: TextInputAction.next,
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                FlightPlace(
-                    ctrlPlace: _departurePlace,
-                    ctrlTime: _departureTime,
-                    name: 'Departure',
-                    calculateTotalTime: _calculateTotalTime,
-                    calculateNightTime: _calculateNightTime),
-                FlightPlace(
-                    ctrlPlace: _arrivalPlace,
-                    ctrlTime: _arrivalTime,
-                    name: 'Arrival',
-                    calculateTotalTime: _calculateTotalTime,
-                    calculateNightTime: _calculateNightTime),
-                Aircraft(ctrlModel: _aircraftModel, ctrlReg: _aircraftReg),
-                Row(
-                  children: <Widget>[
-                    TimeField(ctrl: _timeTT, tt: _timeTT, lbl: 'Total'),
-                    TimeField(ctrl: _timeSE, tt: _timeTT, lbl: 'SE'),
-                    TimeField(ctrl: _timeME, tt: _timeTT, lbl: 'ME'),
-                    TimeField(ctrl: _timeMCC, tt: _timeTT, lbl: 'MCC'),
-                  ],
-                ),
-                Row(
-                  children: <Widget>[
-                    TimeField(ctrl: _timeNight, tt: _timeTT, lbl: 'Night'),
-                    TimeField(ctrl: _timeIFR, tt: _timeTT, lbl: 'IFR'),
-                    TimeField(ctrl: _timePIC, tt: _timeTT, lbl: 'PIC'),
-                    TimeField(ctrl: _timeCOP, tt: _timeTT, lbl: 'SIC'),
-                  ],
-                ),
-                Row(
-                  children: <Widget>[
-                    TimeField(ctrl: _timeDual, tt: _timeTT, lbl: 'Dual'),
-                    TimeField(ctrl: _timeInstr, tt: _timeTT, lbl: 'Instr'),
-                    LandingField(ctrl: _dayLandings, name: 'Day'),
-                    LandingField(ctrl: _nightLandings, name: 'Night'),
-                  ],
-                ),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: TextFormField(
-                        controller: _simType,
-                        decoration: const InputDecoration(
-                          labelText: 'Sim Type',
-                          icon: Icon(Icons.flight),
+                    FlightPlace(
+                      ctrlPlace: _departurePlace,
+                      ctrlTime: _departureTime,
+                      name: 'Departure',
+                      calculateTotalTime: _calculateTotalTime,
+                      calculateNightTime: _calculateNightTime,
+                    ),
+                    FlightPlace(
+                      ctrlPlace: _arrivalPlace,
+                      ctrlTime: _arrivalTime,
+                      name: 'Arrival',
+                      calculateTotalTime: _calculateTotalTime,
+                      calculateNightTime: _calculateNightTime,
+                    ),
+                    Aircraft(ctrlModel: _aircraftModel, ctrlReg: _aircraftReg),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        TimeField(ctrl: _timeTT, tt: _timeTT, lbl: 'Total'),
+                        const SizedBox(width: 20),
+                        LandingField(ctrl: _dayLandings, name: 'Day Landings'),
+                        LandingField(ctrl: _nightLandings, name: 'Night Landings'),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        TimeField(ctrl: _timeSE, tt: _timeTT, lbl: 'SE'),
+                        TimeField(ctrl: _timeME, tt: _timeTT, lbl: 'ME'),
+                        TimeField(ctrl: _timeMCC, tt: _timeTT, lbl: 'MCC'),
+                        const Spacer(),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        TimeField(ctrl: _timeNight, tt: _timeTT, lbl: 'Night'),
+                        TimeField(ctrl: _timeIFR, tt: _timeTT, lbl: 'IFR'),
+                        TimeField(ctrl: _timePIC, tt: _timeTT, lbl: 'PIC'),
+                        TimeField(ctrl: _timeCOP, tt: _timeTT, lbl: 'SIC'),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        TimeField(ctrl: _timeDual, tt: _timeTT, lbl: 'Dual'),
+                        TimeField(ctrl: _timeInstr, tt: _timeTT, lbl: 'Instr'),
+                        const Spacer(),
+                        const Spacer(),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _simType,
+                            decoration: const InputDecoration(labelText: 'Sim Type', icon: Icon(Icons.flight)),
+                            textInputAction: TextInputAction.next,
+                            textCapitalization: TextCapitalization.characters,
+                          ),
                         ),
-                        textInputAction: TextInputAction.next,
-                        textCapitalization: TextCapitalization.characters,
-                      ),
+                        const SizedBox(width: 10),
+                        TimeField(ctrl: _simTime, tt: _timeTT, lbl: 'Sim Time')
+                      ],
                     ),
-                    const SizedBox(width: 10),
-                    TimeField(ctrl: _simTime, tt: _timeTT, lbl: 'Sim Time')
-                  ],
-                ),
-                Row(
-                  children: <Widget>[
-                    Expanded(
-                      child: TextFormField(
-                        controller: _remarks,
-                        decoration: const InputDecoration(
-                          labelText: 'Remarks',
-                          icon: Icon(Icons.notes),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _remarks,
+                            decoration: const InputDecoration(labelText: 'Remarks', icon: Icon(Icons.notes)),
+                            textInputAction: TextInputAction.done,
+                          ),
                         ),
-                        textInputAction: TextInputAction.done,
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              if (!fr.isNew)
+                SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (_attachments.isEmpty)
+                        const Center(child: Text('No Attachments'))
+                      else
+                        for (var attachment in _attachments)
+                          Card(
+                            elevation: 5,
+                            child: ListTile(
+                              leading: const Icon(Icons.attach_file),
+                              title: Text(attachment.documentName),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () async => await _deleteAttachment(attachment.uuid, context),
+                              ),
+                              onTap: () async => await _openAttachment(attachment.uuid),
+                            ),
+                          ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            onPressed: _addPhotoAttachment,
+                            icon: const Icon(Icons.photo_camera),
+                            label: const Text('Photo'),
+                          ),
+                          const SizedBox(width: 10),
+                          ElevatedButton.icon(
+                            onPressed: _addGaleryAttachment,
+                            icon: const Icon(Icons.perm_media),
+                            label: const Text('Galery'),
+                          ),
+                          const SizedBox(width: 10),
+                          ElevatedButton.icon(
+                            onPressed: _addFileAttachment,
+                            icon: const Icon(Icons.file_upload),
+                            label: const Text('File'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+            ],
           ),
         ),
       ),
@@ -397,17 +465,9 @@ class _FlightPageState extends State<FlightPage> {
 
       // get departure and arrival times
       final date = DateFormat('dd/MM/yyyy').parse(_date.text);
-      departureTime = DateTime.utc(
-          date.year,
-          date.month,
-          date.day,
-          int.parse(_departureTime.text.substring(0, 2)),
+      departureTime = DateTime.utc(date.year, date.month, date.day, int.parse(_departureTime.text.substring(0, 2)),
           int.parse(_departureTime.text.substring(2)));
-      arrivalTime = DateTime.utc(
-          date.year,
-          date.month,
-          date.day,
-          int.parse(_arrivalTime.text.substring(0, 2)),
+      arrivalTime = DateTime.utc(date.year, date.month, date.day, int.parse(_arrivalTime.text.substring(0, 2)),
           int.parse(_arrivalTime.text.substring(2)));
 
       if (arrivalTime.isBefore(departureTime)) {
@@ -432,5 +492,87 @@ class _FlightPageState extends State<FlightPage> {
         _timeNight.text = '';
       }
     }
+  }
+
+  void _addPhotoAttachment() {
+    _addAttachment('photo');
+  }
+
+  void _addGaleryAttachment() {
+    _addAttachment('gallery');
+  }
+
+  void _addFileAttachment() {
+    _addAttachment('file');
+  }
+
+  // Function to add an attachment.
+  void _addAttachment(String type) async {
+    final ImagePicker picker = ImagePicker();
+
+    late XFile? media;
+
+    if (type == 'photo') {
+      media = await picker.pickImage(source: ImageSource.camera);
+    } else if (type == 'gallery') {
+      media = await picker.pickImage(source: ImageSource.gallery);
+    } else {
+      media = await picker.pickMedia();
+    }
+
+    if (media != null) {
+      final bytes = await File(media.path).readAsBytes();
+      final attachment = Attachment(
+        uuid: const Uuid().v4(),
+        recordId: fr.uuid,
+        documentName: media.name,
+        document: bytes,
+      );
+
+      await DBProvider.db.insertAttachmentRecord(attachment);
+    }
+
+    _loadAttachment();
+  }
+
+  // Function to delete an attachment.
+  Future _deleteAttachment(String uuid, BuildContext context) async {
+    showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Delete Attachment?'),
+        content: const Text('Are you sure you would like to delete attachment?'),
+        actions: [
+          TextButton(
+            child: const Text('Yes, delete.'),
+            onPressed: () async => {
+              await DBProvider.db.deleteAttachment(uuid),
+              Navigator.pop(context),
+              _loadAttachment(),
+            },
+          ),
+          TextButton(
+            child: const Text('No, keep it.'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],
+      ),
+    );
+
+    return;
+  }
+
+  Future _loadAttachment() async {
+    _attachments = await DBProvider.db.getAttachmentsForFlightRecord(fr.uuid);
+    setState(() {});
+  }
+
+  Future _openAttachment(String uuid) async {
+    final attachment = await DBProvider.db.getAttachmentById(uuid, rawFormat: false) as Attachment;
+
+    final Directory tmpDir = await getTemporaryDirectory();
+    final file = await File('${tmpDir.path}/${attachment.documentName}').writeAsBytes(attachment.document);
+
+    OpenFile.open(file.path);
   }
 }

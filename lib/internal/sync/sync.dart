@@ -8,7 +8,9 @@ import 'package:web_logbook_mobile/driver/db_sync.dart';
 
 // Sync class implements synchronization
 class Sync {
-  Sync({required this.connect});
+  Sync({required this.connect}) {
+    client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  }
 
   final Connect connect;
 
@@ -16,18 +18,14 @@ class Sync {
   static const apiDeleted = '/sync/deleted';
   static const apiFlightRecords = '/sync/flightrecords';
   static const apiAirports = '/sync/airports';
+  static const apiAttachments = '/sync/attachments/';
 
   late String session = '';
 
-  HttpClient getClient() {
-    final client = HttpClient();
-    client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-
-    return client;
-  }
+  HttpClient client = HttpClient();
 
   // Gets session id in case the main app requires the authorization
-  Future<void> getSession(HttpClient client) async {
+  Future<void> getSession() async {
     if (connect.auth) {
       final url = Uri.parse('${connect.url}$apiLogin');
       final payload = jsonEncode({
@@ -45,11 +43,11 @@ class Sync {
     }
   }
 
-  Future<dynamic> syncDeletedItems(HttpClient client) async {
+  // prepare the http client GET request and return the result
+  Future<(dynamic result, dynamic error)> syncGet(Uri url) async {
     dynamic error;
-    final url = Uri.parse('${connect.url}${Sync.apiDeleted}');
+    dynamic result;
 
-    // download deleted items
     try {
       final req = await client.getUrl(url);
 
@@ -63,33 +61,30 @@ class Sync {
       if (res.statusCode == 200) {
         final json = jsonDecode(body);
 
-        for (var i = 0; i < json.length; i++) {
-          final di = DeletedItem.fromData(json[i] as Map<String, dynamic>);
-          await DBProvider.db.processDeletedItems(di);
-        }
-
+        result = json;
         error = null;
       } else {
         error = 'response code ${res.statusCode}';
       }
     } catch (e) {
-      error = 'cannot sync deleted items - $e';
+      error = e;
     }
 
-    if (error != null) {
-      // something wrong already
-      return error;
-    }
+    return (result, error);
+  }
 
-    // upload deleted items
-    List<DeletedItem> listDeletedItems = [];
-    final rawDeletedItems = await DBProvider.db.getDeletedItems();
-    for (var i = 0; i < rawDeletedItems.length; i++) {
-      listDeletedItems.add(DeletedItem.fromData(rawDeletedItems[i]));
+  // prepare the http client POST request and return the error if any
+  Future<dynamic> syncPost(Uri url, Object payload) async {
+    dynamic error;
+    String jsonEncoded;
+
+    try {
+      jsonEncoded = jsonEncode(payload);
+    } catch (e) {
+      return 'cannot encode payload $e';
     }
 
     try {
-      final payload = {'deleted_items': listDeletedItems};
       final req = await client.postUrl(url);
 
       if (connect.auth) {
@@ -97,21 +92,50 @@ class Sync {
       }
 
       req.headers.contentType = ContentType.json;
-      req.write(jsonEncode(payload));
+      req.write(jsonEncoded);
       final res = await req.close();
 
       if (res.statusCode != 200) {
         error = 'response code ${res.statusCode}';
       }
 
-      // once we uploaded deleted items we don't need them anymore
-      await DBProvider.db.cleanDeletedItems();
-
       error = null;
     } catch (e) {
-      error = 'cannot upload records $e';
+      error = e;
     }
 
     return error;
+  }
+
+  // syncs deleted records with main app
+  Future<dynamic> syncDeletedItems() async {
+    dynamic error;
+    dynamic json;
+
+    final url = Uri.parse('${connect.url}${Sync.apiDeleted}');
+
+    // download deleted items
+    (json, error) = await syncGet(url);
+    if (error != null) {
+      return 'cannot download deleted items - $error';
+    }
+
+    for (var i = 0; i < json.length; i++) {
+      final di = DeletedItem.fromData(json[i] as Map<String, dynamic>);
+      await DBProvider.db.processDeletedItems(di);
+    }
+
+    // upload deleted items
+    final deletedItems = await DBProvider.db.getDeletedItems();
+    final payload = {'deleted_items': deletedItems};
+    error = await syncPost(url, payload);
+
+    if (error != null) {
+      return 'cannot upload deleted items - $error';
+    } else {
+      await DBProvider.db.cleanDeletedItems();
+    }
+
+    return null;
   }
 }

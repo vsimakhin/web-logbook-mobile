@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:flutter/services.dart';
+
 class FlightRecord {
   FlightRecord({
     this.uuid = '',
@@ -204,4 +208,45 @@ class Connect {
   final bool auth;
   final String username;
   final String password;
+}
+
+class Attachment {
+  Attachment({
+    required this.uuid,
+    required this.recordId,
+    required this.documentName,
+    required this.document,
+  });
+
+  String uuid;
+  String recordId;
+  String documentName;
+  Uint8List document;
+
+  factory Attachment.fromData(Map<String, dynamic> data) {
+    return Attachment(
+      uuid: data['uuid'] as String,
+      recordId: data['record_id'] as String,
+      documentName: data['document_name'] as String,
+      document: Base64Decoder().convert(data['document']),
+    );
+  }
+
+  factory Attachment.fromMap(Map<String, dynamic> data) {
+    return Attachment(
+      uuid: data['uuid'] as String,
+      recordId: data['record_id'] as String,
+      documentName: data['document_name'] as String,
+      document: data['document'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'uuid': uuid,
+      'record_id': recordId,
+      'document_name': documentName,
+      'document': document,
+    };
+  }
 }
