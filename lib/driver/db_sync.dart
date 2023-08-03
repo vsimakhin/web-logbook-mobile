@@ -43,10 +43,34 @@ extension DBProviderSync on DBProvider {
   }
 
   /// Returns all removed items
-  Future getDeletedItems() async {
+  Future<List<DeletedItem>> getDeletedItems() async {
+    List<DeletedItem> deletedItems = [];
+
     final db = await database;
-    return await db!.rawQuery(
+    final raw = await db!.rawQuery(
       '''SELECT uuid, table_name, delete_time FROM deleted_items''',
     );
+
+    for (var i = 0; i < raw.length; i++) {
+      deletedItems.add(DeletedItem.fromData(raw[i]));
+    }
+
+    return deletedItems;
+  }
+
+  Future getLocalAttachmentIds() async {
+    List<String> attachmentIds = [];
+
+    final db = await database;
+
+    final raw = await db!.rawQuery(
+      '''SELECT uuid FROM attachments''',
+    );
+
+    for (var i = 0; i < raw.length; i++) {
+      attachmentIds.add(raw[i]['uuid'] as String);
+    }
+
+    return attachmentIds;
   }
 }

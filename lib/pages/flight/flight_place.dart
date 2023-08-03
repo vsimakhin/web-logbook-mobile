@@ -20,7 +20,7 @@ class FlightPlace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: <Widget>[
+      children: [
         Expanded(
           child: TextFormField(
             textCapitalization: TextCapitalization.characters,
@@ -40,10 +40,7 @@ class FlightPlace extends StatelessWidget {
               labelText: '$name Time',
               icon: const Icon(Icons.watch),
             ),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-              LengthLimitingTextInputFormatter(4)
-            ],
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9]')), LengthLimitingTextInputFormatter(4)],
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.next,
             onChanged: (value) async {

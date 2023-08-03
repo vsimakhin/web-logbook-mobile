@@ -6,11 +6,20 @@ import 'package:web_logbook_mobile/models/models.dart';
 
 extension DBProviderFlightRecords on DBProvider {
   /// Returns all flight records from the database and orders them by date
-  Future getAllFlightRecords() async {
+  Future<dynamic> getAllFlightRecords({bool rawFormat = true}) async {
     final db = await database;
-    return await db!.rawQuery(
+    final raw = await db!.rawQuery(
       '''SELECT * FROM logbook_view ORDER BY m_date DESC''',
     );
+    if (rawFormat) {
+      return raw;
+    } else {
+      List<FlightRecord> flightRecords = [];
+      for (var i = 0; i < raw.length; i++) {
+        flightRecords.add(FlightRecord.fromData(raw[i]));
+      }
+      return flightRecords;
+    }
   }
 
   Future<int?> getFlightRecordsCount() async {
@@ -126,21 +135,14 @@ extension DBProviderFlightRecords on DBProvider {
     final db = await database;
     if (db == null) return 'cannot initialize connection to database';
 
-    final res = await db.rawDelete(
-      '''DELETE FROM logbook WHERE uuid = ?''',
-      [uuid],
-    );
+    final res = await db.rawDelete('''DELETE FROM logbook WHERE uuid = ?''', [uuid]);
 
     if (res == 0) return 'no record with uuid $uuid found';
 
     await db.rawInsert(
       '''INSERT INTO deleted_items (uuid, table_name, delete_time)
         VALUES(?, ?, ?)''',
-      [
-        uuid,
-        'logbook',
-        getEpochTime(),
-      ],
+      [uuid, 'logbook', getEpochTime()],
     );
 
     return null;
