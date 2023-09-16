@@ -2,6 +2,7 @@
 
 ## [Unrelease]
 
+- Fix: Flights were sorted incorrectly for the same departure date
 - New: Added attachments for the flight records.
 
 ## [1.4.0] - 20.07.2023
