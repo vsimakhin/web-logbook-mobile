@@ -9,7 +9,7 @@ extension DBProviderFlightRecords on DBProvider {
   Future<dynamic> getAllFlightRecords({bool rawFormat = true}) async {
     final db = await database;
     final raw = await db!.rawQuery(
-      '''SELECT * FROM logbook_view ORDER BY m_date DESC''',
+      '''SELECT * FROM logbook_view ORDER BY m_date DESC, departure_time DESC''',
     );
     if (rawFormat) {
       return raw;
