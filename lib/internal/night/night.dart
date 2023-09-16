@@ -1,5 +1,5 @@
-import 'package:suntime/suntime.dart';
 import 'dart:math';
+import 'package:web_logbook_mobile/internal/night/suntime.dart';
 
 // Place defines the departure/arrival point of a route
 class Place {
@@ -66,8 +66,7 @@ Duration nightSegment(
     final flightTime = dist * 30000 / speedPerMinute;
     mid.time = start.time.add(Duration(milliseconds: (flightTime).round()));
 
-    d = nightSegment(start, mid, maxDistance, speedPerMinute) +
-        nightSegment(mid, end, maxDistance, speedPerMinute);
+    d = nightSegment(start, mid, maxDistance, speedPerMinute) + nightSegment(mid, end, maxDistance, speedPerMinute);
   } else {
     // get sunrise and sunset for the end point
     // it could be calculated for the middle point again to be more precise,
@@ -119,8 +118,7 @@ Place midpoint(Place start, Place end) {
   final dlon = lon2 - lon1;
   final bx = cos(lat2) * cos(dlon);
   final by = cos(lat2) * sin(dlon);
-  lat = atan2(sin(lat1) + sin(lat2),
-      sqrt((cos(lat1) + bx) * (cos(lat1) + bx) + by * by));
+  lat = atan2(sin(lat1) + sin(lat2), sqrt((cos(lat1) + bx) * (cos(lat1) + bx) + by * by));
   lon = lon1 + atan2(by, (cos(lat1) + bx));
 
   lat = (lat * 180) / pi;
