@@ -228,7 +228,7 @@ class Attachment {
       uuid: data['uuid'] as String,
       recordId: data['record_id'] as String,
       documentName: data['document_name'] as String,
-      document: Base64Decoder().convert(data['document']),
+      document: const Base64Decoder().convert(data['document']),
     );
   }
 

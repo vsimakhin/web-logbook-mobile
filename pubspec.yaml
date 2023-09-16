@@ -16,11 +16,11 @@ dependencies:
   flutter_launcher_icons:
   flutter_secure_storage:
   http:
-  suntime:
   logger:
   image_picker:
   path_provider:
   open_file_plus:
+  timezone: 
 
 flutter_icons:
   android: "ic_launcher"
@@ -31,6 +31,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints:
+  test:
 
 flutter:
   uses-material-design: true
