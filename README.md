@@ -24,7 +24,7 @@ Android is for sure, and iOS is coming.
 <table border="0">
  <tr>
  <td width=25%><img src="https://raw.githubusercontent.com/vsimakhin/web-logbook-assets/main/mobile/flight-records.jpg"></td>
- <td width=25%><img src="https://raw.githubusercontent.com/vsimakhin/web-logbook-assets/main/mobile/new-flight.jpg"></td>
+ <td width=25%><img src="https://raw.githubusercontent.com/vsimakhin/web-logbook-assets/main/mobile/flight.jpg"></td>
  <td width=25%><img src="https://raw.githubusercontent.com/vsimakhin/web-logbook-assets/main/mobile/stats.jpg"></td>
  <td width=25%><img src="https://raw.githubusercontent.com/vsimakhin/web-logbook-assets/main/mobile/settings.jpg"></td>
  </tr>
@@ -35,9 +35,10 @@ Android is for sure, and iOS is coming.
   * Double tap on the icon for the `PIC Name` field will put `Self`
   * Double tap on any icon for the time field will copy the value from `Total time`
   * Automatic night-time calculation (Airport database should be downloaded -> check `Settings` page)
+  * Attachments
 * Stats
   * Flight totals for `This Month`, `This Year` and `All time`
 * Settings
-  * Set server address
+  * Main application server address
   * Define username and password in case your main application requires authorization
   * Download the airport database. This includes default airfields, and your custom ones as well
