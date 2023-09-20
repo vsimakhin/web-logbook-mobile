@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unrelease]
+## [1.5.0] - 20.09.2023
 
 - Fix: Flights were sorted incorrectly for the same departure date.
 - New: Added attachments for the flight records.
