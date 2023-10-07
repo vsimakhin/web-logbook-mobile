@@ -27,7 +27,6 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _children = [
       const FlightRecordsPage(),
-      FlightPage(fr: FlightRecord(isNew: true)),
       const StatsPage(),
       const SettingsPage(),
     ];
@@ -57,10 +56,6 @@ class _MyAppState extends State<MyApp> {
             BottomNavigationBarItem(
               label: 'Flights',
               icon: Icon(Icons.connecting_airports, color: Colors.grey),
-            ),
-            BottomNavigationBarItem(
-              label: 'New Flight',
-              icon: Icon(Icons.flight_takeoff, color: Colors.grey),
             ),
             BottomNavigationBarItem(
               label: 'Stats',

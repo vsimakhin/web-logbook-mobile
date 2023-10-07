@@ -59,8 +59,25 @@ class _FlightRecordsPageState extends State<FlightRecordsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
-          children: [Icon(Icons.connecting_airports), SizedBox(width: 10), Text('Flight Records')],
+        title: Row(
+          children: [
+            const Icon(Icons.connecting_airports),
+            const SizedBox(width: 10),
+            const Text('Flight Records'),
+            const Spacer(),
+            ElevatedButton.icon(
+              label: const Text('New'),
+              icon: const Icon(Icons.flight_takeoff),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => FlightPage(fr: FlightRecord(isNew: true))),
+                ).then((value) {
+                  _loadData();
+                });
+              },
+            )
+          ],
         ),
       ),
       body: LayoutBuilder(builder: (context, constraints) {
