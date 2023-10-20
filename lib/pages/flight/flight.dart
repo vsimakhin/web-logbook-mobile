@@ -24,7 +24,7 @@ import 'package:web_logbook_mobile/pages/flight/flight_place.dart';
 import 'package:web_logbook_mobile/pages/flight/flight_aircraft.dart';
 
 class FlightPage extends StatefulWidget {
-  const FlightPage({Key? key, required this.fr}) : super(key: key);
+  const FlightPage({super.key, required this.fr});
 
   final FlightRecord fr;
 
@@ -517,7 +517,7 @@ class _FlightPageState extends State<FlightPage> {
             child: const Text('Yes, delete.'),
             onPressed: () async => {
               await DBProvider.db.deleteAttachment(uuid),
-              Navigator.pop(context),
+              if (mounted) Navigator.pop(context),
               _loadAttachment(),
             },
           ),

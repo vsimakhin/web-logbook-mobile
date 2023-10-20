@@ -5,7 +5,7 @@ import 'package:web_logbook_mobile/driver/db_flightrecords.dart';
 import 'package:web_logbook_mobile/pages/flight/flight.dart';
 
 class FlightRecordsPage extends StatefulWidget {
-  const FlightRecordsPage({Key? key}) : super(key: key);
+  const FlightRecordsPage({super.key});
 
   @override
   State<FlightRecordsPage> createState() => _FlightRecordsPageState();

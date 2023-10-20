@@ -8,7 +8,7 @@ import 'package:web_logbook_mobile/models/models.dart';
 import 'package:web_logbook_mobile/pages/stats/stats_tablerow.dart';
 
 class StatsPage extends StatefulWidget {
-  const StatsPage({Key? key}) : super(key: key);
+  const StatsPage({super.key});
 
   @override
   State<StatsPage> createState() => _StatsPageState();
