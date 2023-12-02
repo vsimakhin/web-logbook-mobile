@@ -1,4 +1,5 @@
 ## Web Logbook Mobile
+ℹ️ This repository is archived, there is another project for making mobile client for the main web logbook application https://github.com/vsimakhin/web-logbook-mobile-ionic
 
 This mobile application is a sort of addon to the main [Web Logbook](https://github.com/vsimakhin/web-logbook/). The app is written in the Flutter framework and Dart programming language, using ChatGPT.
 
