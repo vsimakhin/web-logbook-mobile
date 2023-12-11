@@ -1,8 +1,8 @@
-/// This package was forked from https://github.com/diego-garro/suntime-dart
-
 import 'dart:math' as math;
 import 'package:timezone/standalone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tzdl;
+
+/// This package was forked from https://github.com/diego-garro/suntime-dart
 
 class SunTimeException implements Exception {
   String message;

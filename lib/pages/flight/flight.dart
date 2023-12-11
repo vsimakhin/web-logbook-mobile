@@ -24,7 +24,7 @@ import 'package:web_logbook_mobile/pages/flight/flight_place.dart';
 import 'package:web_logbook_mobile/pages/flight/flight_aircraft.dart';
 
 class FlightPage extends StatefulWidget {
-  const FlightPage({Key? key, required this.fr}) : super(key: key);
+  const FlightPage({super.key, required this.fr});
 
   final FlightRecord fr;
 
@@ -367,43 +367,13 @@ class _FlightPageState extends State<FlightPage> {
 
     late String info;
     if (fr.isNew) {
-      // in case the flight record was new, let's pretend there
-      // will be another one, so we can change departure vs arrival
-      // and keep the same aircraft
-      setState(() {
-        _departurePlace.text = _arrivalPlace.text;
-        _departureTime.clear();
-        _arrivalPlace.clear();
-        _arrivalTime.clear();
-        _dayLandings.clear();
-        _nightLandings.clear();
-        // _aircraftModel.clear();
-        // _aircraftReg.clear();
-        _picName.clear();
-
-        _timeTT.clear();
-        _timeSE.clear();
-        _timeME.clear();
-        _timeMCC.clear();
-        _timeNight.clear();
-        _timeIFR.clear();
-        _timePIC.clear();
-        _timeCOP.clear();
-        _timeDual.clear();
-        _timeInstr.clear();
-
-        _simType.clear();
-        _simTime.clear();
-
-        _remarks.clear();
-      });
-
       info = 'Flight record has been added';
+      setState(() {
+        fr.isNew = false; // this will enable attachments
+      });
     } else {
       info = 'Flight record has been updated';
-      Navigator.pop(context, true);
     }
-
     showInfo(context, info);
   }
 
@@ -547,7 +517,7 @@ class _FlightPageState extends State<FlightPage> {
             child: const Text('Yes, delete.'),
             onPressed: () async => {
               await DBProvider.db.deleteAttachment(uuid),
-              Navigator.pop(context),
+              if (mounted) Navigator.pop(context),
               _loadAttachment(),
             },
           ),

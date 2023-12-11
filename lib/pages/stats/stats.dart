@@ -8,7 +8,7 @@ import 'package:web_logbook_mobile/models/models.dart';
 import 'package:web_logbook_mobile/pages/stats/stats_tablerow.dart';
 
 class StatsPage extends StatefulWidget {
-  const StatsPage({Key? key}) : super(key: key);
+  const StatsPage({super.key});
 
   @override
   State<StatsPage> createState() => _StatsPageState();
@@ -53,7 +53,7 @@ class _StatsPageState extends State<StatsPage> {
                 },
                 children: [
                   StatsTableRow(
-                    name: 'Statistic',
+                    name: 'Stats',
                     values: const ['This Month', 'This\nYear', 'All time'],
                     isHeader: true,
                   ),
@@ -103,11 +103,7 @@ class _StatsPageState extends State<StatsPage> {
                   ),
                   StatsTableRow(
                     name: 'Day Landings',
-                    values: [
-                      month.dayLandings.toString(),
-                      year.dayLandings.toString(),
-                      all.dayLandings.toString()
-                    ],
+                    values: [month.dayLandings.toString(), year.dayLandings.toString(), all.dayLandings.toString()],
                   ),
                   StatsTableRow(
                     name: 'Night Landings',

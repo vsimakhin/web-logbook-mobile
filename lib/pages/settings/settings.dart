@@ -11,8 +11,11 @@ import 'package:web_logbook_mobile/driver/db.dart';
 import 'package:web_logbook_mobile/driver/db_airports.dart';
 import 'package:web_logbook_mobile/driver/db_flightrecords.dart';
 
+import 'package:provider/provider.dart';
+import 'package:web_logbook_mobile/helpers/model_theme.dart';
+
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({Key? key}) : super(key: key);
+  const SettingsPage({super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
@@ -46,121 +49,140 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Row(
-          children: [Icon(Icons.settings), SizedBox(width: 10), Text('Settings & Synchronization')],
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(10.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              // server address
-              TextFormField(
-                controller: _serverAddressController,
-                decoration: const InputDecoration(labelText: 'Server address', icon: Icon(Icons.computer)),
-                validator: (value) => _fieldValidator(value, "server address"),
-              ),
-              // either use authentication or not
-              CheckboxListTile(
-                secondary: const Icon(Icons.how_to_reg),
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Use authentication'),
-                value: _useAuth,
-                onChanged: (value) {
-                  setState(() => _useAuth = value!);
-                },
-              ),
-              if (_useAuth)
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _usernameController,
-                        decoration: const InputDecoration(labelText: 'Username', icon: Icon(Icons.person)),
-                        validator: (value) => _fieldValidator(value, "username"),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _passwordController,
-                        obscureText: true,
-                        decoration: const InputDecoration(labelText: 'Password', icon: Icon(Icons.password)),
-                        validator: (value) => _fieldValidator(value, "password"),
-                      ),
-                    ),
-                  ],
-                ),
-              const Divider(),
-              // Flight records
-              Row(
-                children: [
-                  const Icon(Icons.connecting_airports),
-                  const SizedBox(width: 15),
-                  Text('Flight records: $_flightRecords'),
-                  const Spacer(),
-                  ElevatedButton(
-                    child: const Text('Update'),
-                    onPressed: () {
-                      if (_isSyncing) return;
-                      _syncFlightRecords();
-                    },
-                  )
-                ],
-              ),
-              // Airport DB
-              Row(
-                children: [
-                  const Icon(Icons.local_airport),
-                  const SizedBox(width: 15),
-                  Text('Airports: $_airports'),
-                  const Spacer(),
-                  ElevatedButton(
-                    child: const Text('Update'),
-                    onPressed: () {
-                      if (_isSyncing) return;
-                      _dowloadAirports();
-                    },
-                  )
-                ],
-              ),
-              const Divider(),
-              const SizedBox(height: 40),
-              Visibility(
-                visible: _isSyncing,
-                child: const Row(
-                  children: [
-                    CircularProgressIndicator(),
-                    SizedBox(width: 20),
-                    Text('Synchronization is in progress...'),
-                  ],
-                ),
-              ),
-            ],
+    return Consumer<ModelTheme>(builder: (context, ModelTheme themeNotifier, child) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Row(
+            children: [Icon(Icons.settings), SizedBox(width: 10), Text('Settings & Synchronization')],
           ),
         ),
-      ),
-      persistentFooterButtons: [
-        Row(
-          children: [
-            ElevatedButton(
-              child: const Text('Save'),
-              onPressed: () {
-                if (_formKey.currentState!.validate()) {
-                  _saveSettings();
-                  showInfo(context, 'Settings saved');
-                }
-              },
+        body: Padding(
+          padding: const EdgeInsets.all(10.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                // server address
+                TextFormField(
+                  controller: _serverAddressController,
+                  decoration: const InputDecoration(labelText: 'Server address', icon: Icon(Icons.computer)),
+                  validator: (value) => _fieldValidator(value, "server address"),
+                  onChanged: (value) {
+                    _saveSettings();
+                  },
+                ),
+                // either use authentication or not
+                CheckboxListTile(
+                  secondary: const Icon(Icons.how_to_reg),
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Use authentication'),
+                  value: _useAuth,
+                  onChanged: (value) {
+                    _useAuth = value!;
+                    _saveSettings();
+                  },
+                ),
+                if (_useAuth)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _usernameController,
+                          decoration: const InputDecoration(labelText: 'Username', icon: Icon(Icons.person)),
+                          validator: (value) => _fieldValidator(value, "username"),
+                          onChanged: (value) {
+                            _saveSettings();
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextFormField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          decoration: const InputDecoration(labelText: 'Password', icon: Icon(Icons.password)),
+                          validator: (value) => _fieldValidator(value, "password"),
+                          onChanged: (value) {
+                            _saveSettings();
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                const Divider(),
+                // misc settings
+                Row(
+                  children: [
+                    const Icon(Icons.light_mode),
+                    const SizedBox(width: 15),
+                    const Text('Theme'),
+                    const Spacer(),
+                    DropdownButton(
+                      value: themeNotifier.themeName,
+                      items: ['System', 'Light', 'Dark'].map((String items) {
+                        return DropdownMenuItem(
+                          value: items,
+                          child: Text(items),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        themeNotifier.theme = newValue!;
+                        setState(() {});
+                      },
+                    ),
+                  ],
+                ),
+                const Divider(),
+                // Flight records
+                Row(
+                  children: [
+                    const Icon(Icons.connecting_airports),
+                    const SizedBox(width: 15),
+                    Text('Flight records: $_flightRecords'),
+                    const Spacer(),
+                    ElevatedButton(
+                      child: const Text('Update'),
+                      onPressed: () {
+                        if (_isSyncing) return;
+                        _syncFlightRecords();
+                      },
+                    )
+                  ],
+                ),
+                // Airport DB
+                Row(
+                  children: [
+                    const Icon(Icons.local_airport),
+                    const SizedBox(width: 15),
+                    Text('Airports: $_airports'),
+                    const Spacer(),
+                    ElevatedButton(
+                      child: const Text('Update'),
+                      onPressed: () {
+                        if (_isSyncing) return;
+                        _dowloadAirports();
+                      },
+                    )
+                  ],
+                ),
+                const Divider(),
+                const SizedBox(height: 40),
+                Visibility(
+                  visible: _isSyncing,
+                  child: const Row(
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(width: 20),
+                      Text('Synchronization is in progress...'),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const Spacer(),
-          ],
+          ),
         ),
-      ],
-    );
+      );
+    });
   }
 
   // Load settings from the secure storage since we have there
